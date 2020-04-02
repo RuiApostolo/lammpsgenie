@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Nov  3 11:35:19 2014
-
-@author: mdoig
+@author: Michael Doig
+Modified on Tue 31 Mar 16:14:49 BST 2020
+@author: Rui Apóstolo
 """
 
 # Program to combine data files - in order for this to work all data files
-# should have existing force field parameters present. While this could lead to 
+# should have existing force field parameters present. While this could lead to
 # duplicates, it is much easier and more efficient to code
 
 # usage: python combineDatafiles.py -n 3 data1 min/max z data2 min/max z data3 min/maxz -o data.combined.out
@@ -31,19 +32,20 @@ Steps:
 
 """
 
-import random
+import gzip
+import math
 import sys
-import math, gzip
+import random
 from commondata import readAll, getNatoms, readTS, getTSrange, getAtomType, getAtomData
 from commondata import getTS, getAt, getMol, getTotMass, getCOMts, readcombmasses, readAllGzip
 from commondata import getAllAtomData
 from itertools import islice
-import subprocess 
+import subprocess
 
 try:
     temp = sys.argv[1]
-except:
-    print "Program usage: python mergedatafiles-newdatafile.py  -n 3 data1 min/max z data2 min/max z data3 min/maxz -o data.combined.out (where -n # is the number of data files)"
+except BaseException:
+    print "Program usage: python mergedatafiles-newdatafile.py -n 3 data1 min/max z data2 min/max z data3 min/maxz -o data.combined.out (where -n # is the number of data files)"
     sys.exit(-1)
 
 
@@ -51,13 +53,13 @@ numdatafiles = int(sys.argv[2])
 readsyntax = {}
 datafile = {}
 outputdata = {}
-for i in range (1, numdatafiles+1):
+for i in range(1, numdatafiles+1):
     print i
     readsyntax[i] = {}
     readsyntax[i]['name'] = {}
     readsyntax[i]['name'] = sys.argv[(3*i)]
-    readsyntax[i]['maxmin'] = sys.argv[(3*i+1 )]
-    readsyntax[i]['shift'] = float(sys.argv[(3*i +2 )])
+    readsyntax[i]['maxmin'] = sys.argv[(3*i+1)]
+    readsyntax[i]['shift'] = float(sys.argv[(3*i + 2)])
     datafile[i] = {}
     datafile[i]['atomdata'] = {}
     datafile[i]['bonddata'] = {}
@@ -79,7 +81,7 @@ header = 9
 zmax = {}
 zmin = {}
 
-for i in range(1,numdatafiles+1):
+for i in range(1, numdatafiles+1):
     zlist = []
     zmax[i] = {}
     zmin[i] = {}
@@ -87,7 +89,8 @@ for i in range(1,numdatafiles+1):
     print "Data file "+str(fndata)
     atomnames = getAtomType(fndata)
     print atomnames
-    atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, numdata, paircoeff, bondcoeff, anglecoeff, dhcoeff, impcoeff = getAllAtomData(fndata, atomnames)
+    atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, numdata, paircoeff, bondcoeff, anglecoeff, dhcoeff, impcoeff = getAllAtomData(
+        fndata, atomnames)
     datafile[i]['atomdata'] = atomdata
     datafile[i]['bonddata'] = bonddata
     datafile[i]['angledata'] = angledata
@@ -101,11 +104,11 @@ for i in range(1,numdatafiles+1):
     datafile[i]['anglecoeff'] = anglecoeff
     datafile[i]['dhcoeff'] = dhcoeff
     datafile[i]['impcoeff'] = impcoeff
-    
+
     a = datafile[i]['atomdata'].keys()
     for j in a:
-        zlist.append(float(datafile[i]['atomdata'][j]['z']))#
-        
+        zlist.append(float(datafile[i]['atomdata'][j]['z']))
+
     """
     SHIFT COORDINATES BASED ON MAX/MIN
     """
@@ -118,13 +121,13 @@ for i in range(1,numdatafiles+1):
         zmin[i] = min(zlist)
         if zmin[i] < readsyntax[i]['shift']:
             for k in a:
-                atomdata[k]['z'] += (readsyntax[i]['shift']- zmin[i])
-    
-#########################################################################################
+                atomdata[k]['z'] += (readsyntax[i]['shift'] - zmin[i])
+
+##########################################################################
 
 
-#########################################################################################
-# MERGING FILES    
+##########################################################################
+# MERGING FILES
 # CALCULATE RENUMBERING
 # #######################################################################################
 outdatafile = {}
@@ -151,27 +154,26 @@ imptypeshift = 0
 molshift = {}
 moleshift = 0
 
-for i in range(1,numdatafiles+1):
+for i in range(1, numdatafiles+1):
     molshift[i] = {}
     mollist = []
-    #print "MOLLIST - EMPTY:"
-    #print mollist
+    # print "MOLLIST - EMPTY:"
+    # print mollist
     l_atoms = []
     l_atoms = datafile[i]['atomdata'].keys()
     for b in l_atoms:
         mollist.append(datafile[i]['atomdata'][b]['mol'])
     molshift[i] = max(mollist)
-    #print "MAX: MOL LIST"+str(molshift[i])
-        
+    # print "MAX: MOL LIST"+str(molshift[i])
 
 
-for i in range (1, numdatafiles+1):
+for i in range(1, numdatafiles+1):
     if i == 1:
         outdatafile['atomdata'] = datafile[i]['atomdata']
         newdatafile = {}
         newdatafile[i] = {}
         newdatafile[i] = datafile[i]
-        
+
     else:
         # GET LIST OF ORIGINAL KEYS
         l_atoms_orig = []
@@ -183,7 +185,7 @@ for i in range (1, numdatafiles+1):
         l_dh_orig = []
         l_dh_orig = datafile[i]['dhdata'].keys()
         l_imp_orig = []
-        l_imp_orig = datafile[i]['impdata'].keys()        
+        l_imp_orig = datafile[i]['impdata'].keys()
         # CALCULATE SHIFT (continuous sum over loop)
         atshift += datafile[i-1]['numdata']['natoms']
         print "atom shift - "+str(i)+" - "+str(atshift)
@@ -197,7 +199,7 @@ for i in range (1, numdatafiles+1):
         dhtypeshift += datafile[i-1]['numdata']['ndhtypes']
         impshift += datafile[i-1]['numdata']['nimp']
         imptypeshift += datafile[i-1]['numdata']['nimptypes']
-        #natprev = atshift #datafile[i-1]['numdata']['natoms']
+        # natprev = atshift #datafile[i-1]['numdata']['natoms']
         moleshift += molshift[i-1]
         print 'moleshift '+str(moleshift)
         l_atoms = []
@@ -207,14 +209,13 @@ for i in range (1, numdatafiles+1):
         l_angles = [x+angshift for x in l_angles_orig]
         l_dh = [x+dhshift for x in l_dh_orig]
         l_imp = [x+impshift for x in l_imp_orig]
-        
-        
+
         newdatafile[i] = {}
-        newdatafile[i]['atomdata']= {}
+        newdatafile[i]['atomdata'] = {}
         newdatafile[i]['masses'] = {}
         newdatafile[i]['masses'] = datafile[i]['masses']
         newdatafile[i]['numdata'] = {}
-        newdatafile[i]['numdata'] = datafile[i]['numdata']        
+        newdatafile[i]['numdata'] = datafile[i]['numdata']
         counter = 0
         for j, x in enumerate(l_atoms_orig):
             counter += 1
@@ -225,24 +226,27 @@ for i in range (1, numdatafiles+1):
 
             #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'].pop(x)
             newdatafile[i]['atomdata'][l_atoms[j]] = {}
-            newdatafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'][l_atoms_orig[j]]
-            #print "OLD/NEW"
-            #print datafile[i]['atomdata'][l_atoms_orig[j]]
-            #print newdatafile[i]['atomdata'][l_atoms[j]]
+            newdatafile[i]['atomdata'][
+                l_atoms[j]] = datafile[i]['atomdata'][
+                l_atoms_orig[j]]
+            # print "OLD/NEW"
+            # print datafile[i]['atomdata'][l_atoms_orig[j]]
+            # print newdatafile[i]['atomdata'][l_atoms[j]]
             #datafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-            #print "BEFORE"
-            #print newdatafile[i]['atomdata'][l_atoms[j]]
+            # print "BEFORE"
+            # print newdatafile[i]['atomdata'][l_atoms[j]]
             newdatafile[i]['atomdata'][l_atoms[j]]['mol'] += moleshift
             newdatafile[i]['atomdata'][l_atoms[j]]['type'] += attypeshift
-            #print "AFTER:" 
-            #print newdatafile[i]['atomdata'][l_atoms[j]]
+            # print "AFTER:"
+            # print newdatafile[i]['atomdata'][l_atoms[j]]
             #newdatafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-        
-        #for j, x in enumerate(l_atoms_orig):          
-        #    print "MOL TYPE - NEW: "+str(newdatafile[i]['atomdata'][l_atoms[j]]['mol'])
+
+        # for j, x in enumerate(l_atoms_orig):
+        # print "MOL TYPE - NEW:
+        # "+str(newdatafile[i]['atomdata'][l_atoms[j]]['mol'])
         """
             datafile[i]['atomdata'][x]['type'] += attypeshift
-            
+
             if j < 5:
                 print "MOLSHIFT BEFORE: "+str(datafile[i]['atomdata'][x]['mol'])
             datafile[i]['atomdata'][l_atoms_orig[j]]['mol'] += moleshift
@@ -258,87 +262,97 @@ for i in range (1, numdatafiles+1):
             #    if j > 11750:
             #        print "Previous mol num: "+str(datafile[i]['atomdata'][l_atoms[j-1]]['mol'])+" "+str(l_atoms[j-1])
 #            print "l_atoms l_atoms_orig "+str(l_atoms[j])+" "+str(l_atoms_orig[j])
-#            datafile[i]['atomdata'].pop(l_atoms_orig[j], None)              
+#            datafile[i]['atomdata'].pop(l_atoms_orig[j], None)
         """
-        #print "Length of dictionary before pop: "+str(len(newdatafile[i]['atomdata']))
-        """              
+        # print "Length of dictionary before pop:
+        # "+str(len(newdatafile[i]['atomdata']))
+        """
         for k in range (1, atshift+1):
             datafile[i]['atomdata'].pop(k, None)
         print "Length of dictionary after pop: "+str(len(datafile[i]['atomdata']))
-        
-        j = 0        
-        """    
-        """    
+
+        j = 0
+        """
+        """
         for j, x in enumerate(l_atoms_orig):
              if j < 5: #11750:
                 print "After renumbering part 2: "+str(datafile[i]['atomdata'][l_atoms[j]]['mol'])+" "+str(l_atoms[j])
         """
-            #if j < 5:
-            #    print datafile[i]['atomdata'][l_atoms[j]]['mol']
-            
-        #for j, x in enumerate(l_atoms_prev):
+        # if j < 5:
+        #    print datafile[i]['atomdata'][l_atoms[j]]['mol']
+
+        # for j, x in enumerate(l_atoms_prev):
         #    newdatafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-            #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'].pop(x)
-        
+        #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'].pop(x)
+
         newdatafile[i]['bonddata'] = {}
         for j, x in enumerate(l_bonds_orig):
             # INCREMENT ATOM NUMBERS / BONDTYPE IN BOND LIST
             newdatafile[i]['bonddata'][l_bonds[j]] = {}
-            newdatafile[i]['bonddata'][l_bonds[j]] = datafile[i]['bonddata'][l_bonds_orig[j]]
+            newdatafile[i]['bonddata'][
+                l_bonds[j]] = datafile[i]['bonddata'][
+                l_bonds_orig[j]]
             newdatafile[i]['bonddata'][l_bonds[j]]['at1'] += atshift
             newdatafile[i]['bonddata'][l_bonds[j]]['at2'] += atshift
             newdatafile[i]['bonddata'][l_bonds[j]]['bondtype'] += btypeshift
             # SHIFT BOND NUMBERS IN DICTIONARY
             #newdatafile[i]['bonddata'].pop(l_bonds_orig[j], None)
             #newdatafile[i]['bonddata'][l_bonds[j]] = datafile[i]['bonddata'].pop(x)
-        #for k in range (1, bshift+1):
+        # for k in range (1, bshift+1):
         #    datafile[i]['bonddata'].pop(k, None)
-            
-        newdatafile[i]['angledata'] = {}    
+
+        newdatafile[i]['angledata'] = {}
         for j, x in enumerate(l_angles_orig):
             # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
             newdatafile[i]['angledata'][l_angles[j]] = {}
-            newdatafile[i]['angledata'][l_angles[j]] = datafile[i]['angledata'][l_angles_orig[j]]
+            newdatafile[i]['angledata'][
+                l_angles[j]] = datafile[i]['angledata'][
+                l_angles_orig[j]]
             newdatafile[i]['angledata'][l_angles[j]]['at1'] += atshift
             newdatafile[i]['angledata'][l_angles[j]]['at2'] += atshift
             newdatafile[i]['angledata'][l_angles[j]]['at3'] += atshift
-            newdatafile[i]['angledata'][l_angles[j]]['angletype'] += angtypeshift           
+            newdatafile[i]['angledata'][
+                l_angles[j]]['angletype'] += angtypeshift
             # SHIFT ANGLE NUMBERS IN DICTIONARY
             #newdatafile[i]['angledata'].pop(l_angles_orig[j], None)
             #datafile[i]['angledata'][l_angles[j]] = datafile[i]['angledata'].pop(x)
-        
+
         newdatafile[i]['dhdata'] = {}
         for j, x in enumerate(l_dh_orig):
             # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
             newdatafile[i]['dhdata'][l_dh[j]] = {}
-            newdatafile[i]['dhdata'][l_dh[j]] = datafile[i]['dhdata'][l_dh_orig[j]]
+            newdatafile[i]['dhdata'][
+                l_dh[j]] = datafile[i]['dhdata'][
+                l_dh_orig[j]]
             newdatafile[i]['dhdata'][l_dh[j]]['at1'] += atshift
             newdatafile[i]['dhdata'][l_dh[j]]['at2'] += atshift
             newdatafile[i]['dhdata'][l_dh[j]]['at3'] += atshift
             newdatafile[i]['dhdata'][l_dh[j]]['at4'] += atshift
-            newdatafile[i]['dhdata'][l_dh[j]]['dhtype'] += dhtypeshift      
+            newdatafile[i]['dhdata'][l_dh[j]]['dhtype'] += dhtypeshift
             # SHIFT ANGLE NUMBERS IN DICTIONARY
-        #for k in range (1, dhshift+1):
+        # for k in range (1, dhshift+1):
             #datafile[i]['dhdata'].pop(k, None)
             #datafile[i]['dhdata'][l_dh[j]] = datafile[i]['dhdata'].pop(x)
             #newdatafile[i]['dhdata'].pop(l_dh_orig[j], None)
-        
+
         newdatafile[i]['impdata'] = {}
         for j, x in enumerate(l_imp_orig):
             # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
             newdatafile[i]['impdata'][l_imp[j]] = {}
-            newdatafile[i]['impdata'][l_imp[j]] = datafile[i]['impdata'][l_imp_orig[j]]
+            newdatafile[i]['impdata'][
+                l_imp[j]] = datafile[i]['impdata'][
+                l_imp_orig[j]]
             newdatafile[i]['impdata'][l_imp[j]]['at1'] += atshift
             newdatafile[i]['impdata'][l_imp[j]]['at2'] += atshift
             newdatafile[i]['impdata'][l_imp[j]]['at3'] += atshift
             newdatafile[i]['impdata'][l_imp[j]]['at4'] += atshift
-            newdatafile[i]['impdata'][l_imp[j]]['imptype'] += imptypeshift   
-                        # SHIFT ANGLE NUMBERS IN DICTIONARY
-            #for k in range (1, impshift+1):
+            newdatafile[i]['impdata'][l_imp[j]]['imptype'] += imptypeshift
+            # SHIFT ANGLE NUMBERS IN DICTIONARY
+            # for k in range (1, impshift+1):
             #    datafile[i]['impdata'].pop(k, None)
             #newdatafile[i]['impdata'].pop(l_imp_orig[j], None)
             #datafile[i]['impdata'][l_imp[j]] = datafile[i]['impdata'].pop(x)
-            
+
 
 ###################################################
 # WRITE OUTPUT DATA FILE
@@ -357,16 +371,16 @@ totnbonds = 0
 totnangles = 0
 totndh = 0
 totnimp = 0
-for i in range(1,numdatafiles+1):
+for i in range(1, numdatafiles+1):
     try:
         totnbonds += len(newdatafile[i]['bonddata'].keys())
         totnangles += len(newdatafile[i]['angledata'].keys())
         totndh += len(newdatafile[i]['dhdata'].keys())
         totnimp += len(newdatafile[i]['imp'].keys())
-    except:
+    except BaseException:
         junk = 0
 
-#print totnbonds, totnangles, totndh, totnimp
+# print totnbonds, totnangles, totndh, totnimp
 thefile.write(str(totnbonds)+" bonds\n")
 thefile.write(str(totnangles)+" angles\n")
 thefile.write(str(totndh)+" dihedrals\n")
@@ -410,7 +424,7 @@ lan = []
 ldh = []
 lim = []
 
-for i in range(1,numdatafiles+1):
+for i in range(1, numdatafiles+1):
     try:
         at = newdatafile[i]['atomdata'].keys()
         bo = newdatafile[i]['bonddata'].keys()
@@ -427,35 +441,35 @@ for i in range(1,numdatafiles+1):
             ldh.append(newdatafile[i]['dhdata'][j]['dhtype'])
         for j in im:
             lim.append(newdatafile[i]['impdata'][j]['imptype'])
-    except:
+    except BaseException:
         junk = 0
 try:
     totnatomstype = max(lat)
-except:
+except BaseException:
     totnatomstype = 0
 try:
     totnbondstype = max(lbo)
-except:
+except BaseException:
     totnbondstype = 0
 try:
     totnanglestype = max(lan)
-except:
+except BaseException:
     totnanglestype = 0
 try:
     totndhtype = max(ldh)
-except:
+except BaseException:
     totndhtype = 0
 try:
     totnimptype = max(lim)
-except:
+except BaseException:
     totnimptype = 0
-#print totnbondstype, totnanglestype, totndhtype, totnimptype
-           
-print str(totnatomstype)+" atom types"           
+# print totnbondstype, totnanglestype, totndhtype, totnimptype
+
+print str(totnatomstype)+" atom types"
 print str(totnbondstype)+" bond types"
 print str(totnanglestype)+" angle types"
 print str(totndhtype)+" dihedral types"
-print str(totnimptype)+" improper types"           
+print str(totnimptype)+" improper types"
 
 thefile.write(str(totnatomstype)+" atom types\n")
 thefile.write(str(totnbondstype)+" bond types\n")
@@ -530,93 +544,121 @@ thefile.write(str(totnimptype)+" improper types\n")
 
 #############################################################
 #            HEADER COMPLETE
-#############################################################            
-            
+#############################################################
+
 ##############################################################
 #            GET X/Y/Z HI LO
-            
+
 #  TO BE COMPLETED
-            
+
 ##############################################################
 
 ##############################################################
 # ALL COEFFS
-            
-# TO BE COMPLETED
-            
-################################################################
 
+# TO BE COMPLETED
+
+################################################################
 
 
 ###############################################################
 # WRITE ATOMS PART OF DATA FILE
 def writeAtomsData(outputfn, atomdata, i):
-    thefile = open(outputfn,"a")
-    if(i==1):
+    thefile = open(outputfn, "a")
+    if(i == 1):
         thefile.write("\n")
         thefile.write("Atoms\n")
         thefile.write("\n")
     b = sorted(atomdata.keys())
     for i in b:
-        thefile.write("%i %i %i %f %f %f %f %s %s \n" % (i, atomdata[i]['mol'], atomdata[i]['type'], \
-        atomdata[i]['charge'], atomdata[i]['x'], atomdata[i]['y'], atomdata[i]['z'], '#', atomdata[i]['atomname']))
+        thefile.write(
+            "%i %i %i %f %f %f %f %s %s \n" %
+            (i, atomdata[i]['mol'],
+             atomdata[i]['type'],
+             atomdata[i]['charge'],
+             atomdata[i]['x'],
+             atomdata[i]['y'],
+             atomdata[i]['z'],
+             '#', atomdata[i]['atomname']))
     thefile.close()
-    
+
+
 def writeBondData(outputfn, bonddata, i, totnbonds):
-    thefile = open(outputfn,"a")
-    if(i==1 and totnbonds != 0):
+    thefile = open(outputfn, "a")
+    if(i == 1 and totnbonds != 0):
         thefile.write("\n")
         thefile.write("Bonds\n")
         thefile.write("\n")
     if(totnbonds != 0):
         b = sorted(bonddata.keys())
         for i in b:
-            thefile.write("%i %i %i %i \n" % (i, bonddata[i]['bondtype'], \
-            bonddata[i]['at1'], bonddata[i]['at2']))
+            thefile.write(
+                "%i %i %i %i \n" %
+                (i, bonddata[i]['bondtype'],
+                 bonddata[i]['at1'],
+                 bonddata[i]['at2']))
     thefile.close()
 
+
 def writeAngleData(outputfn, angledata, i, totnangles):
-    thefile = open(outputfn,"a")
-    if(i==1 and totnangles != 0):
+    thefile = open(outputfn, "a")
+    if(i == 1 and totnangles != 0):
         thefile.write("\n")
         thefile.write("Angles\n")
         thefile.write("\n")
-    if(totnangles != 0):       
+    if(totnangles != 0):
         b = sorted(angledata.keys())
         for i in b:
-            thefile.write("%i %i %i %i %i \n" % (i, angledata[i]['angletype'], \
-            angledata[i]['at1'], angledata[i]['at2'], angledata[i]['at3']))
+            thefile.write(
+                "%i %i %i %i %i \n" %
+                (i, angledata[i]['angletype'],
+                 angledata[i]['at1'],
+                 angledata[i]['at2'],
+                 angledata[i]['at3']))
     thefile.close()
 
+
 def writeDHData(outputfn, dhdata, i, totndh):
-    thefile = open(outputfn,"a")
-    if(i==1 and totndh != 0):
+    thefile = open(outputfn, "a")
+    if(i == 1 and totndh != 0):
         thefile.write("\n")
         thefile.write("Dihedrals\n")
         thefile.write("\n")
-    if(totndh != 0):       
+    if(totndh != 0):
         b = sorted(dhdata.keys())
         for i in b:
-            thefile.write("%i %i %i %i %i %i \n" % (i, dhdata[i]['dhtype'], \
-            dhdata[i]['at1'], dhdata[i]['at2'], dhdata[i]['at3'], dhdata[i]['at4']))
+            thefile.write(
+                "%i %i %i %i %i %i \n" %
+                (i, dhdata[i]['dhtype'],
+                 dhdata[i]['at1'],
+                 dhdata[i]['at2'],
+                 dhdata[i]['at3'],
+                 dhdata[i]['at4']))
     thefile.close()
 
+
 def writeIMPData(outputfn, impdata, i, totnimp):
-    thefile = open(outputfn,"a")
-    if(i==1 and totnimp != 0):
+    thefile = open(outputfn, "a")
+    if(i == 1 and totnimp != 0):
         thefile.write("\n")
         thefile.write("Impropers\n")
         thefile.write("\n")
-    if(totnimp != 0):       
+    if(totnimp != 0):
         b = sorted(impdata.keys())
         for i in b:
-            thefile.write("%i %i %i %i %i %i \n" % (i, impdata[i]['imptype'], \
-            impdata[i]['at1'], impdata[i]['at2'], impdata[i]['at3'], impdata[i]['at4']))
+            thefile.write(
+                "%i %i %i %i %i %i \n" %
+                (i, impdata[i]['imptype'],
+                 impdata[i]['at1'],
+                 impdata[i]['at2'],
+                 impdata[i]['at3'],
+                 impdata[i]['at4']))
     thefile.close()
+
 
 def writeMasses(outputfn, massdata, i, totnatomstype, counter):
     thefile = open(outputfn, "a")
-    if (i==1):
+    if (i == 1):
         thefile.write("\n")
         thefile.write("Masses\n")
         thefile.write("\n")
@@ -626,117 +668,159 @@ def writeMasses(outputfn, massdata, i, totnatomstype, counter):
         counter += 1
     return counter
 
+
 def writePairCoeffs(outputfn, paircoeffs, i, totnatomstype, counter):
     thefile = open(outputfn, "a")
-    if (i==1):
+    if (i == 1):
         thefile.write("\n")
         thefile.write("Pair Coeffs\n")
         thefile.write("\n")
     b = sorted(paircoeffs.keys())
-    #print "B - sorted pair coeffs:"
-    #print b
-    #print "pair coeffs"
-    #print paircoeffs
-    #print "pair coeff"
-    #print paircoeff
+    # print "B - sorted pair coeffs:"
+    # print b
+    # print "pair coeffs"
+    # print paircoeffs
+    # print "pair coeff"
+    # print paircoeff
     for i in b:
-        #print "i (in b) :"+str(i)
-        #print "counter :"+str(counter)
-        #print "SAME AS FILE WRITE"
-        #print counter, paircoeff[i]['eps'], paircoeff[i]['sig'], '#', paircoeff[i]['label']
-        thefile.write("%i %s %s %s %s \n" % (counter, paircoeffs[i]['eps'], paircoeffs[i]['sig'], '#', paircoeffs[i]['label']))
+        # print "i (in b) :"+str(i)
+        # print "counter :"+str(counter)
+        # print "SAME AS FILE WRITE"
+        # print counter, paircoeff[i]['eps'], paircoeff[i]['sig'], '#',
+        # paircoeff[i]['label']
+        thefile.write(
+            "%i %s %s %s %s \n" %
+            (counter, paircoeffs[i]['eps'],
+             paircoeffs[i]['sig'],
+             '#', paircoeffs[i]['label']))
         counter += 1
     thefile.close()
     return counter
-    
+
+
 def writeBondCoeffs(outputfn, bondcoeffs, i, totnbondstype, counter):
     thefile = open(outputfn, "a")
-    if (i==1):
+    if (i == 1):
         thefile.write("\n")
         thefile.write("Bond Coeffs\n")
         thefile.write("\n")
     b = sorted(bondcoeffs.keys())
     for i in b:
-        thefile.write("%i %s %s %s %s \n" % (counter, bondcoeffs[i]['k'], bondcoeffs[i]['r'], '#', bondcoeffs[i]['label']))
+        thefile.write(
+            "%i %s %s %s %s \n" %
+            (counter, bondcoeffs[i]['k'],
+             bondcoeffs[i]['r'],
+             '#', bondcoeffs[i]['label']))
         counter += 1
     thefile.close()
     return counter
-    
+
+
 def writeAngleCoeffs(outputfn, anglecoeffs, i, totnanglestype, counter):
     thefile = open(outputfn, "a")
-    if (i==1):
+    if (i == 1):
         thefile.write("\n")
         thefile.write("Angle Coeffs\n")
         thefile.write("\n")
     b = sorted(anglecoeffs.keys())
     for i in b:
-        thefile.write("%i %s %s %s %s \n" % (counter, anglecoeffs[i]['k'], anglecoeffs[i]['theta'], '#', anglecoeffs[i]['label']))
+        thefile.write(
+            "%i %s %s %s %s \n" %
+            (counter, anglecoeffs[i]['k'],
+             anglecoeffs[i]['theta'],
+             '#', anglecoeffs[i]['label']))
         counter += 1
     thefile.close()
     return counter
-    
+
+
 def writeDHCoeffs(outputfn, dhcoeffs, i, totndhtype, counter):
     thefile = open(outputfn, "a")
-    if (i==1):
+    if (i == 1):
         thefile.write("\n")
         thefile.write("Dihedral Coeffs\n")
         thefile.write("\n")
     b = sorted(dhcoeffs.keys())
     for i in b:
-        thefile.write("%i %s %s %s %s %s %s \n" % (counter, dhcoeffs[i]['a'], dhcoeffs[i]['b'], dhcoeffs[i]['c'], dhcoeffs[i]['d'], '#', dhcoeffs[i]['label']))
+        thefile.write(
+            "%i %s %s %s %s %s %s \n" %
+            (counter, dhcoeffs[i]['a'],
+             dhcoeffs[i]['b'],
+             dhcoeffs[i]['c'],
+             dhcoeffs[i]['d'],
+             '#', dhcoeffs[i]['label']))
         counter += 1
     thefile.close()
     return counter
 
+
 def writeIMPCoeffs(outputfn, impcoeffs, i, totnimptype, counter):
     thefile = open(outputfn, "a")
-    if (i==1 and totnimp != 0):
+    if (i == 1 and totnimp != 0):
         thefile.write("\n")
         thefile.write("Improper Coeffs\n")
         thefile.write("\n")
     b = sorted(impcoeffs.keys())
     for i in b:
-        thefile.write("%i %s %s %s %s %s %s \n" % (counter, impcoeffs[i]['a'], impcoeffs[i]['b'], impcoeffs[i]['c'], impcoeffs[i]['d'], '#', impcoeffs[i]['label']))
+        thefile.write(
+            "%i %s %s %s %s %s %s \n" %
+            (counter, impcoeffs[i]['a'],
+             impcoeffs[i]['b'],
+             impcoeffs[i]['c'],
+             impcoeffs[i]['d'],
+             '#', impcoeffs[i]['label']))
         counter += 1
     thefile.close()
     return counter
 
+
 paircount = 1
 for i in range(1, numdatafiles+1):
-    paircount = writePairCoeffs(outputfile, datafile[i]['paircoeff'], i , totnatomstype, paircount)
+    paircount = writePairCoeffs(
+        outputfile, datafile[i]['paircoeff'],
+        i, totnatomstype, paircount)
 
 bondcount = 1
 for i in range(1, numdatafiles+1):
-    bondcount = writeBondCoeffs(outputfile, datafile[i]['bondcoeff'], i , totnbondstype, bondcount)
+    bondcount = writeBondCoeffs(
+        outputfile, datafile[i]['bondcoeff'],
+        i, totnbondstype, bondcount)
 
 anglecount = 1
 for i in range(1, numdatafiles+1):
-    anglecount = writeAngleCoeffs(outputfile, datafile[i]['anglecoeff'], i , totnanglestype, anglecount)
+    anglecount = writeAngleCoeffs(
+        outputfile, datafile[i]['anglecoeff'],
+        i, totnanglestype, anglecount)
 
 dhcount = 1
 for i in range(1, numdatafiles+1):
-    dhcount = writeDHCoeffs(outputfile, datafile[i]['dhcoeff'], i , totndhtype, dhcount)
-    
+    dhcount = writeDHCoeffs(
+        outputfile, datafile[i]['dhcoeff'],
+        i, totndhtype, dhcount)
+
 impcount = 1
 for i in range(1, numdatafiles+1):
-    impcount = writeIMPCoeffs(outputfile, datafile[i]['impcoeff'], i , totnimptype, impcount)
+    impcount = writeIMPCoeffs(
+        outputfile, datafile[i]['impcoeff'],
+        i, totnimptype, impcount)
 
 masscount = 1
 for i in range(1, numdatafiles+1):
-    masscount = writeMasses(outputfile,newdatafile[i]['masses'], i, totnatomstype, masscount)
-    
-for i in range (1, numdatafiles+1):
+    masscount = writeMasses(
+        outputfile, newdatafile[i]['masses'],
+        i, totnatomstype, masscount)
+
+for i in range(1, numdatafiles+1):
     writeAtomsData(outputfile, newdatafile[i]['atomdata'], i)
-    
+
 for i in range(1, numdatafiles+1):
     writeBondData(outputfile, newdatafile[i]['bonddata'], i, totnbonds)
-    
+
 for i in range(1, numdatafiles+1):
     writeAngleData(outputfile, newdatafile[i]['angledata'], i, totnangles)
- 
+
 for i in range(1, numdatafiles+1):
     writeDHData(outputfile, newdatafile[i]['dhdata'], i, totndh)
-    
+
 for i in range(1, numdatafiles+1):
-    writeIMPData(outputfile, newdatafile[i]['impdata'], i, totnimp)   
- 
+    writeIMPData(outputfile, newdatafile[i]['impdata'], i, totnimp)
