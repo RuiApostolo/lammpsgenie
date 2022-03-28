@@ -80,18 +80,25 @@ def getTSrange(lines):
     return tsrange
 
 
-
-
-
-
-
-
-
-
-
-
-
-# Not done from here down:
+"""
+getTS
+last modified: 13/03/14
+"""
+# select timestep range
+# ts1 = first time step or 'first''
+# ts2 = second time step or 'last'
+def getTS(traj, atomdata, ts1, ts2):
+    if ts1 == 'first':
+        ts1 = sorted(traj.keys())[0]
+    if ts2 == 'last':
+        ts2 = sorted(traj.keys())[len(traj)-1]
+    sortedts = sorted(traj.keys())
+    tsrange = []
+    for i, x in enumerate(sortedts):
+        if int(x) >= int(ts1):
+            if int(x) <= int(ts2):
+                tsrange.append(x)
+    return tsrange
 
 ###########################################################
 """
@@ -176,10 +183,15 @@ def readTS(lines, header, natoms, tsnum, atomnames):
     return traj
 
 
+
+
+
+
+
 #########################################################
 """
 getAtomType
-Reads data file (fn) and return a list of atom numbers with all spaces/new line characters removed
+reads data file (fn) and return a list of atom numbers with all spaces/new line characters removed
  ln = (line.split("#")[1]) splits at the '#' character and puts everything after # into ln
  .replace(" ","") replaces all spaces with no spaces
  .strip("\n") removes any new line characters
@@ -208,6 +220,10 @@ def getAtomType(fn):
             file.close()
             return atomnames
 #############################################################
+
+
+
+# Not done from here down:
 
 
 """
@@ -764,27 +780,6 @@ def readpreFFData(fn):
 ##########################################################
 
 
-
-
-"""
-getTS
-last modified: 13/03/14
-"""
-# select timestep range
-# ts1 = first time step or 'first''
-# ts2 = second time step or 'last'
-def getTS(traj, atomdata, ts1, ts2):
-    if ts1 == 'first':
-        ts1 = sorted(traj.keys())[0]
-    if ts2 == 'last':
-        ts2 = sorted(traj.keys())[len(traj)-1]
-    sortedts = sorted(traj.keys())
-    tsrange = []
-    for i, x in enumerate(sortedts):
-        if int(x) >= int(ts1):
-            if int(x) <= int(ts2):
-                tsrange.append(x)
-    return tsrange
 
 #########################################################
 """
