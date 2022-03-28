@@ -64,6 +64,36 @@ def getNatoms(lines):
             return natoms
 
 ############################################################
+
+"""
+getTSrange
+last modified: 13/03/14
+"""
+def getTSrange(lines):
+    tsrange = {}
+    tscount = 1
+    for i,x in enumerate(lines):
+        if lines[i].startswith("ITEM: TIMESTEP"):
+            ts = int(lines[i+1].strip("\n"))
+            tsrange[tscount] = ts
+            tscount += 1
+    return tsrange
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Not done from here down:
+
+###########################################################
 """
 readTS
 last modified: 13/03/14
@@ -71,9 +101,9 @@ last modified: 13/03/14
 def readTS(lines, header, natoms, tsnum, atomnames):
     traj = {}
     j = 0
-    k = 0 
+    k = 0
     nlines = natoms + header
-    firstline = ((tsnum-1)*nlines)    
+    firstline = ((tsnum-1)*nlines)
     lastline = firstline + nlines-1
     #print 'firstline/lastline '+str(firstline)+' / '+str(lastline)
     #for i, x in enumerate(lines[firstline:lastline]):
@@ -145,21 +175,6 @@ def readTS(lines, header, natoms, tsnum, atomnames):
                 traj[ts]["atom"][atomid]["type"] = atomnames[traj[ts]["atom"][atomid]["type"]]
     return traj
 
-###########################################################
-  
-"""
-getTSrange
-last modified: 13/03/14
-"""
-def getTSrange(lines):
-    tsrange = {}
-    tscount = 1
-    for i,x in enumerate(lines):
-        if lines[i].startswith("ITEM: TIMESTEP"):
-            ts = int(lines[i+1].strip("\n"))
-            tsrange[tscount] = ts
-            tscount += 1
-    return tsrange
 
 #########################################################
 """
@@ -193,8 +208,8 @@ def getAtomType(fn):
             file.close()
             return atomnames
 #############################################################
-            
-            
+
+
 """
 getAtomData
 last modified: 13/03/14
@@ -207,11 +222,11 @@ def getAtomData(fn, atomnames):
     for i, x in enumerate(lines):
         if "atoms" in lines[i]:
             natoms = ((lines[i].split("atoms")[0]).replace(" ","")).strip("\n")
-        
+
         if "atom types" in lines[i]:
             ntypes = ((lines[i].split("atom")[0]).replace(" ","")).strip("\n")
             print "ntypes "+str(ntypes)
-        
+
         if "Masses" in lines[i]:
             junk = lines[i+1]
             masscol = ['mass', 'type']
@@ -237,9 +252,9 @@ def getAtomData(fn, atomnames):
                     #print atomnames
                 atomdata[atomid]['type'] = atomnames[atomdata[atomid]['type']]
     return atomdata, mass
-    
+
 ##########################################################
-    
+
 def getAllAtomData(fn, atomnames):
     lines = readAll(fn)
     junk = ""
@@ -256,19 +271,19 @@ def getAllAtomData(fn, atomnames):
     angle = {}
     dh = {}
     imp = {}
-    
+
     numdata['natoms'] = {}
     numdata['nbonds'] = {}
     numdata['nangles'] = {}
     numdata['ndh'] = {}
-    numdata['nimp'] = {}    
-    
+    numdata['nimp'] = {}
+
     numdata['natomtypes'] = {}
     numdata['nbondtypes'] = {}
     numdata['nangletypes'] = {}
     numdata['ndhtypes'] = {}
     numdata['nimptypes'] = {}
-    
+
     for i, x in enumerate(lines):
         if "atoms" in lines[i]:
             natoms = int(((lines[i].split("atoms")[0]).replace(" ","")).strip("\n"))
@@ -312,7 +327,7 @@ def getAllAtomData(fn, atomnames):
             boxsize['xlo'] = {}
             boxsize['xhi'] = {}
             boxsize['xlo'] = xlo
-            boxsize['xhi'] = xhi  
+            boxsize['xhi'] = xhi
         if "ylo yhi" in lines[i]:
             ln = lines[i].split()
             ylo = float(ln[0])
@@ -320,7 +335,7 @@ def getAllAtomData(fn, atomnames):
             boxsize['ylo'] = {}
             boxsize['yhi'] = {}
             boxsize['ylo'] = ylo
-            boxsize['yhi'] = yhi 
+            boxsize['yhi'] = yhi
         if "zlo zhi" in lines[i]:
             ln = lines[i].split()
             zlo = float(ln[0])
@@ -328,9 +343,9 @@ def getAllAtomData(fn, atomnames):
             boxsize['zlo'] = {}
             boxsize['zhi'] = {}
             boxsize['zlo'] = zlo
-            boxsize['zhi'] = zhi 
-        
-        
+            boxsize['zhi'] = zhi
+
+
         if "Pair Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ 'eps', 'sig', '#', 'label']
@@ -346,7 +361,7 @@ def getAllAtomData(fn, atomnames):
                     #pair[paircoeffid]['sig'] = float(pair[paircoeffid]['sig'])
             print "Pair Coeffs:"
             print pair
-                    
+
         if "Bond Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ 'k', 'r', '#', 'label']
@@ -362,7 +377,7 @@ def getAllAtomData(fn, atomnames):
                     #bond[bondcoeffid]['r'] = float(bond[bondcoeffid]['r'])
             print "Bond Coeffs"
             print bond
-            
+
         if "Angle Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns = ['k', 'theta', '#', 'label']
@@ -376,7 +391,7 @@ def getAllAtomData(fn, atomnames):
                     angle[anglecoeffid][str(k)] = (el[l+1])
             print "Angle Coeffs"
             print angle
-            
+
         if "Dihedral Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns = ['a', 'b', 'c', 'd', '#', 'label']
@@ -390,7 +405,7 @@ def getAllAtomData(fn, atomnames):
                     dh[dhcoeffid][str(k)] = (el[l+1])
             print "Dihedral Coeffs"
             print dh
-            
+
         if "Improper Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns = ['a', 'b', 'c', 'd', '#', 'label']
@@ -404,8 +419,8 @@ def getAllAtomData(fn, atomnames):
                     imp[impcoeffid][str(k)] = (el[l+1])
             print "Improper Coeffs"
             print imp
-                        
-        
+
+
         if "Masses" in lines[i]:
             junk = lines[i+1]
             masscol = ['mass', 'type']
@@ -442,7 +457,7 @@ def getAllAtomData(fn, atomnames):
                 atomdata[atomid]['x'] = atomnames[atomdata[atomid]['x']]
                 atomdata[atomid]['y'] = atomnames[atomdata[atomid]['y']]
                 atomdata[atomid]['z'] = atomnames[atomdata[atomid]['z']]"""
-                
+
         if "Bonds" in lines[i]:
             junk = lines[i+1]
             columns = ['bondtype', 'at1', 'at2']
@@ -494,12 +509,12 @@ def getAllAtomData(fn, atomnames):
                         impdata[impid][str(k)] = {}
                     impdata[impid][str(k)] = int(el[l+1])
                     #print atomnames
-        
+
     return atomdata, bonddata, angledata, dhdata, impdata, mass, boxsize, numdata, pair, bond, angle, dh, imp
 
 ###########################################################
 ###########################################################
-##  READ DATA FILE WITH NO FORCE FIELD PARAMETERS 
+##  READ DATA FILE WITH NO FORCE FIELD PARAMETERS
 
 
 def readpreFFData(fn):
@@ -518,19 +533,19 @@ def readpreFFData(fn):
     angle = {}
     dh = {}
     imp = {}
-    
+
     numdata['natoms'] = {}
     numdata['nbonds'] = {}
     numdata['nangles'] = {}
     numdata['ndh'] = {}
-    numdata['nimp'] = {}    
-    
+    numdata['nimp'] = {}
+
     numdata['natomtypes'] = {}
     numdata['nbondtypes'] = {}
     numdata['nangletypes'] = {}
     numdata['ndhtypes'] = {}
     numdata['nimptypes'] = {}
-    
+
     for i, x in enumerate(lines):
         if "atoms" in lines[i]:
             natoms = int(((lines[i].split("atoms")[0]).replace(" ","")).strip("\n"))
@@ -574,7 +589,7 @@ def readpreFFData(fn):
             boxsize['xlo'] = {}
             boxsize['xhi'] = {}
             boxsize['xlo'] = xlo
-            boxsize['xhi'] = xhi  
+            boxsize['xhi'] = xhi
         if "ylo yhi" in lines[i]:
             ln = lines[i].split()
             ylo = float(ln[0])
@@ -582,7 +597,7 @@ def readpreFFData(fn):
             boxsize['ylo'] = {}
             boxsize['yhi'] = {}
             boxsize['ylo'] = ylo
-            boxsize['yhi'] = yhi 
+            boxsize['yhi'] = yhi
         if "zlo zhi" in lines[i]:
             ln = lines[i].split()
             zlo = float(ln[0])
@@ -590,8 +605,8 @@ def readpreFFData(fn):
             boxsize['zlo'] = {}
             boxsize['zhi'] = {}
             boxsize['zlo'] = zlo
-            boxsize['zhi'] = zhi 
-        
+            boxsize['zhi'] = zhi
+
         if "Pair Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ '#', 'num', 'label']
@@ -606,7 +621,7 @@ def readpreFFData(fn):
                     #pair[paircoeffid]['sig'] = float(pair[paircoeffid]['sig'])
             print "Pair Coeffs:"
             print pair
-                    
+
         if "Bond Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ '#', 'num', 'label']
@@ -621,7 +636,7 @@ def readpreFFData(fn):
                     #bond[bondcoeffid]['r'] = float(bond[bondcoeffid]['r'])
             print "Bond Coeffs"
             print bond
-        
+
         if "Angle Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ '#', 'num', 'label']
@@ -634,7 +649,7 @@ def readpreFFData(fn):
 
             print "Angle Coeffs"
             print angle
-            
+
         if "Dihedral Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ '#', 'num', 'label']
@@ -647,7 +662,7 @@ def readpreFFData(fn):
 
             print "Dihedral Coeffs"
             print dh
-                
+
         if "Improper Coeffs" in lines[i]:
             junk = lines[i+1] # Reads blank line
             columns  = [ '#', 'num', 'label']
@@ -660,7 +675,7 @@ def readpreFFData(fn):
 
             print "Improper Coeffs"
             print imp
-                              
+
         if "Atoms" in lines[i]:
             junk = lines[i+1]
             columns = ['mol', 'type', 'charge', 'x', 'y', 'z', '#', 'atomname']
@@ -688,7 +703,7 @@ def readpreFFData(fn):
                 atomdata[atomid]['x'] = atomnames[atomdata[atomid]['x']]
                 atomdata[atomid]['y'] = atomnames[atomdata[atomid]['y']]
                 atomdata[atomid]['z'] = atomnames[atomdata[atomid]['z']]"""
-                
+
         if "Bonds" in lines[i]:
             junk = lines[i+1]
             columns = ['bondtype', 'at1', 'at2']
@@ -740,16 +755,13 @@ def readpreFFData(fn):
                         impdata[impid][str(k)] = {}
                     impdata[impid][str(k)] = int(el[l+1])
                     #print atomnames
-    
+
     return atomdata, bonddata, angledata, dhdata, impdata, mass, boxsize, numdata, pair, bond, angle, dh, imp
 
 
 
 ##########################################################
 ##########################################################
-
-
-
 
 
 
@@ -792,7 +804,7 @@ def getAt(traj, atomdata, at1, at2):
                 atrange.append(x)
     return atrange
 #######################################################
-    
+
 """
 getMol
 last modified: 13/03/14
@@ -830,9 +842,9 @@ def getTotMass(traj, masses, natoms, tsrange):
 getCOMTS
 #calculate centre of mass
 # Reads in timestep by timesteps
-# returns the COM dictionary where the format is 
+# returns the COM dictionary where the format is
 #  COM[t,'xcom, ycom, zcom']
-# !!! where t is the timestep from 1 to N, NOT the 
+# !!! where t is the timestep from 1 to N, NOT the
 # physical timestep number in simulation !!!
 last modified: 13/03/14
 """
@@ -868,7 +880,7 @@ def getCOMts(lines, masses, natoms, header, atomnames):
         COM[t]['xcom'] = xcom
         COM[t]['ycom'] = ycom
         COM[t]['zcom'] = zcom
-       # if 
+       # if
         if (t % 20 == 0):
             print 'COM step '+str(t)
     print 'Centre of Mass - complt'
@@ -892,7 +904,7 @@ def readcombmasses(fn, atommasses):
         for j, y in enumerate(elems):
             combmass[elems[0]] += float(atommasses[y])
     return combmass
-      
+
 
 ##########################################
 
@@ -946,7 +958,7 @@ def readTraj(lines, header, natoms,tstot,atomnames):
                 #Change from numerical atom type (from dump) to atom type name (from data file)
                 traj[ts]["atom"][atomid]["type"] = atomnames[traj[ts]["atom"][atomid]["type"]]
     return traj
-                
+
 ###########################################
 ## OBSOLETE - READS FROM WHOLE TRAJECTORY AT ONCE
 def getCOM(traj, masses,natoms, tsrange):
@@ -957,7 +969,7 @@ def getCOM(traj, masses,natoms, tsrange):
         COM[t] = {}
         xf = 0.0
         yf = 0.0
-        zf = 0.0 
+        zf = 0.0
         for j in range(int(natoms)):
             x = float(traj[t]['atom'][j+1]['x']) * float(masses[traj[t]['atom'][j+1]['type']])
             xf = xf + x
@@ -990,8 +1002,8 @@ def getVelProfTS(lines, masses, natoms, header, atomnames):
         if (i==0):
             atomnumrange = datats[tsrange[t]]['atom'].keys()
         #for j in range(int(natoms)):
-            
-           #NEEDS TO BE BINNED AT THIS STAGE - BASED ON z distance 
+
+           #NEEDS TO BE BINNED AT THIS STAGE - BASED ON z distance
         for j in atomnumrange:
             vx = float(datats[tsrange[t]]['atom'][j]['vx'])
             vxf += vx
@@ -999,7 +1011,7 @@ def getVelProfTS(lines, masses, natoms, header, atomnames):
             vyf += vy
             vz = float(datats[tsrange[t]]['atom'][j]['vz'])
             vzf += vz
-            
+
         #if (i==0):
         #    totmass = getTotMass(datats, masses,natoms, tsrange)
         #xcom = xf/totmass
@@ -1014,5 +1026,5 @@ def getVelProfTS(lines, masses, natoms, header, atomnames):
         if (t % 20 == 0):
             print 'Vel. profile step '+str(t)
         print 'Vel. profile - complt'
-    
-    
+
+
