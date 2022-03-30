@@ -83,18 +83,35 @@ def test_getTSrange_fromFile(dumpfilelines, timesteps):
 
 @pytest.mark.parametrize(
     "datafile, atomtypes", [
-         ("uadodecane.data", {'1': 'SCP', '2': 'SCS'})
+         ("uadodecane.data", {1: 'SCP', 2: 'SCS'})
     ])
 def test_getAtomType(datafile, atomtypes):
     assert cdp3.getAtomType("uadodecane.data") == atomtypes
 
 
-#  def test_readTS_fromFile(dumpfilelines):
-#      traj = cdp3.readTS(dumpfilelines,
-#                         9,
-#                         cdp3.getNatoms(dumpfilelines),
-#                         len(cdp3.getTSrange(dumpfilelines)),
-#                         )
-#      assert len(traj.keys()) == 6
+def test_readTS_fromFile(dumpfilelines):
+    traj = cdp3.readTS(dumpfilelines,
+                       cdp3.getNatoms(dumpfilelines),
+                       1,
+                       cdp3.getAtomType("uadodecane.data"),
+                       9
+                       )
+    #  print("dumpfilelines",
+    #        cdp3.getNatoms(dumpfilelines),
+    #        len(cdp3.getTSrange(dumpfilelines)),
+    #        cdp3.getAtomType("uadodecane.data"),
+    #        9
+    #        )
+    assert len(traj.keys()) == 1
+    assert len(traj[10000]['atom'].keys()) == 2400
+    assert traj[10000]['boxsize'] == (45.1, 45.2, 45.3)
+    assert traj[10000]['atom'][1] == {'type': 'SCP',
+                                      'x': 36.5534,
+                                      'y': 30.3231,
+                                      'z': 35.2407,
+                                      'vx': -0.00334412,
+                                      'vy': -0.0064402,
+                                      'vz': -0.000754788
+                                      }
 
 # TODO: getTS

@@ -124,11 +124,21 @@ def getTSrange(lines):
 # TODO here downwards
 def getAtomType(filename):
     """
-    reads data file (fn) and return a list of atom numbers with all
-    spaces/new line characters removed ln = (line.split("#")[1]) splits at
-    the '#' character and puts everything after # into ln .replace(" ","")
-    replaces all spaces with no spaces .strip("\n") removes any new line
-    characters
+    Reads data file and returns a dictionary of the atom types, retrieved
+    from comment after `#` in each line in the `Pair Coeff` section of
+    the datafile.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the datafile to be read.
+
+    Returns
+    -------
+    atomnames : dict of str
+        A dictionary with the LAMMPS atom type numbers as keys, and the
+        custom atom type names as values.
+        {1: 'CPS', 2: 'OCB'}
     """
 
     p = re.compile(r"(\s*\d*\s*)(?P<name>[a-zA-Z]*\w*)(\s+\w*)")
@@ -141,25 +151,23 @@ def getAtomType(filename):
             atomnames = {}
         if "Pair Coeffs" in line:
             for i in range(1, natomtypes + 1):
-                match = re.match(p, lines[lineindex + i + 1].split("#")[1])
-                if match.group('name') != '':
-                    atomnames[str(i)] = match.group('name')
+                matches = re.match(p, lines[lineindex + i + 1].split("#")[1])
+                if matches.group('name') != '':
+                    atomnames[i] = matches.group('name')
                 else:
-                    atomnames[str(i)] = str(i)
+                    atomnames[i] = str(i)
             return atomnames
-    return 0
+    return {}
 
 
-def readTS(lines, header, natoms, tsnum, atomnames):
+def readTS(lines, natoms, tsnum, atomnames, header=9):
     """
-    Creates a dictionary with all the trajectory information.
+    Reads in one timestep `tsnum`.
 
     TODO
     """
 
     traj = {}
-    j = 0
-    k = 0
     nlines = natoms + header
     firstline = ((tsnum-1)*nlines)
     lastline = firstline + nlines-1
@@ -175,9 +183,9 @@ def readTS(lines, header, natoms, tsnum, atomnames):
             traj[ts]["boxy"] = {}
             traj[ts]["boxz"] = {}
         if "BOX BOUNDS" in lines[i]:
-            boxx = map(float, lines[i+1].split())
-            boxy = map(float, lines[i+2].split())
-            boxz = map(float, lines[i+3].split())
+            boxx = list(map(float, lines[i+1].split()))
+            boxy = list(map(float, lines[i+2].split()))
+            boxz = list(map(float, lines[i+3].split()))
             header = 9
             lx = boxx[1] - boxx[0]
             ly = boxy[1] - boxy[0]
@@ -190,9 +198,9 @@ def readTS(lines, header, natoms, tsnum, atomnames):
             # traj[ts]["boxsize"]['lz'] = lz
             traj[ts]["boxsize"] = (lx, ly, lz)
         if "xy xz yz pp pp" in lines[i]:
-            boxx = map(float, lines[i+1].split())
-            boxy = map(float, lines[i+2].split())
-            boxz = map(float, lines[i+3].split())
+            boxx = list(map(float, lines[i+1].split()))
+            boxy = list(map(float, lines[i+2].split()))
+            boxz = list(map(float, lines[i+3].split()))
             header = 9
             lx = boxx[1] - boxx[0]
             ly = boxy[1] - boxy[0]
@@ -202,15 +210,16 @@ def readTS(lines, header, natoms, tsnum, atomnames):
             traj[ts]["boxz"] = (boxz)
             traj[ts]["boxsize"] = (lx, ly, lz)
         if lines[i].startswith("ITEM: ATOMS"):
-            elems = lines[i].split()
+            labels = lines[i].split()
             for j in range(natoms):
-                el = lines[i+j+1].split()
-                for element, k in enumerate(elems[2:]):
-                    if element == 0:
-                        atomid = int(el[element])
-                        traj[ts]["atom"][atomid] = {}
-                        continue
-                    traj[ts]["atom"][atomid][k] = el[element]
+                atomval = lines[i+j+1].split()
+                atomid = int(atomval[0])
+                traj[ts]["atom"][atomid] = {}
+                for label_idx, k in enumerate(labels[3:], start=1):
+                    if k == 'type':
+                        traj[ts]["atom"][atomid][k] = int(atomval[label_idx])
+                    else:
+                        traj[ts]["atom"][atomid][k] = float(atomval[label_idx])
                 # Change from numerical atom type (from dump) to atom type
                 # name (from data file)
                 traj[ts]["atom"][atomid]["type"] = \
