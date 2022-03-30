@@ -176,7 +176,6 @@ def test_readTS_fromFile(dumpfilelines,
                          boxsize,
                          properties):
     traj = cdp3.readTS(dumpfilelines,
-                       cdp3.getNatoms(dumpfilelines),
                        framenumber,
                        cdp3.getAtomType("uadodecane.data"),
                        9

@@ -160,48 +160,45 @@ def getAtomType(filename):
     return {}
 
 
-def readTS(lines, natoms, tsnum, atomnames, header=9):
+def readTS(lines, tsnum, atomnames, header=9):
     """
-    Reads in one timestep `tsnum`.
+    Reads dumpfile and returns the atomic information of a timestep.
 
-    TODO
+    Parameters
+    ----------
+    lines : list of str
+        Reads list of lines from dumpfile.
+
+    tsnum : int
+        Number of the frame to read.
+
+    atomnames : dict
+        Dictionary of atom types and names. Use getAtomType().
+
+    header : int, default=9
+        Number of lines in the dumpfile 'header', from 'ITEM: TIMESTEP' to
+        'ITEM: ATOM', inclusive.
+    Returns
+    -------
+    traj : dict
+    TODO: traj description
+    TODO: remove `ts`?
     """
 
     traj = {}
+    natoms = getNatoms(lines)
     nlines = natoms + header
     firstline = ((tsnum-1)*nlines)
     lastline = firstline + nlines-1
-    # print('firstline/lastline '+str(firstline)+' / '+str(lastline))
-    # for i, x in enumerate(lines[firstline:lastline]):
-    for i in range(firstline, lastline):
-        if lines[i].startswith("ITEM: TIMESTEP"):
-            ts = int(lines[i+1])
+    for line in range(firstline, lastline):
+        if lines[line].startswith("ITEM: TIMESTEP"):
+            ts = int(lines[line+1])
             traj[ts] = {}
             traj[ts]["atom"] = {}
-            traj[ts]["boxsize"] = {}
-            traj[ts]["boxx"] = {}
-            traj[ts]["boxy"] = {}
-            traj[ts]["boxz"] = {}
-        if "BOX BOUNDS" in lines[i]:
-            boxx = list(map(float, lines[i+1].split()))
-            boxy = list(map(float, lines[i+2].split()))
-            boxz = list(map(float, lines[i+3].split()))
-            header = 9
-            lx = boxx[1] - boxx[0]
-            ly = boxy[1] - boxy[0]
-            lz = boxz[1] - boxz[0]
-            traj[ts]["boxx"] = (boxx)
-            traj[ts]["boxy"] = (boxy)
-            traj[ts]["boxz"] = (boxz)
-            # traj[ts]["boxsize"]['lx'] = lx
-            # traj[ts]["boxsize"]['ly'] = ly
-            # traj[ts]["boxsize"]['lz'] = lz
-            traj[ts]["boxsize"] = (lx, ly, lz)
-        if "xy xz yz pp pp" in lines[i]:
-            boxx = list(map(float, lines[i+1].split()))
-            boxy = list(map(float, lines[i+2].split()))
-            boxz = list(map(float, lines[i+3].split()))
-            header = 9
+        if any(s in lines[line] for s in ["BOX BOUNDS", "xy xz yz pp pp"]):
+            boxx = list(map(float, lines[line+1].split()))
+            boxy = list(map(float, lines[line+2].split()))
+            boxz = list(map(float, lines[line+3].split()))
             lx = boxx[1] - boxx[0]
             ly = boxy[1] - boxy[0]
             lz = boxz[1] - boxz[0]
@@ -209,17 +206,17 @@ def readTS(lines, natoms, tsnum, atomnames, header=9):
             traj[ts]["boxy"] = (boxy)
             traj[ts]["boxz"] = (boxz)
             traj[ts]["boxsize"] = (lx, ly, lz)
-        if lines[i].startswith("ITEM: ATOMS"):
-            labels = lines[i].split()
-            for j in range(natoms):
-                atomval = lines[i+j+1].split()
-                atomid = int(atomval[0])
+        if lines[line].startswith("ITEM: ATOMS"):
+            labels = lines[line].split()
+            for atomid in range(1, natoms + 1):
+                atomvals = lines[line+atomid].split()
                 traj[ts]["atom"][atomid] = {}
                 for label_idx, k in enumerate(labels[3:], start=1):
                     if k == 'type':
-                        traj[ts]["atom"][atomid][k] = int(atomval[label_idx])
+                        traj[ts]["atom"][atomid][k] = int(atomvals[label_idx])
                     else:
-                        traj[ts]["atom"][atomid][k] = float(atomval[label_idx])
+                        traj[ts]["atom"][atomid][k] = float(
+                            atomvals[label_idx])
                 # Change from numerical atom type (from dump) to atom type
                 # name (from data file)
                 traj[ts]["atom"][atomid]["type"] = \
