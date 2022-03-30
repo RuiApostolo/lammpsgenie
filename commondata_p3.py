@@ -131,6 +131,7 @@ def getAtomType(filename):
     characters
     """
 
+    p = re.compile(r"(\s*\d*\s*)(?P<name>[a-zA-Z]*\w*)(\s+\w*)")
     with open(filename, "r") as datafile:
         lines = datafile.read().splitlines()
     for lineindex, line in enumerate(lines):
@@ -140,13 +141,13 @@ def getAtomType(filename):
             atomnames = {}
         if "Pair Coeffs" in line:
             for i in range(1, natomtypes + 1):
-                p = re.compile(r"(\s*\d*\s*)(?P<name>[a-zA-Z]*\w*)(\s+\w*)")
                 match = re.match(p, lines[lineindex + i + 1].split("#")[1])
                 if match.group('name') != '':
                     atomnames[str(i)] = match.group('name')
                 else:
                     atomnames[str(i)] = str(i)
             return atomnames
+    return 0
 
 
 def readTS(lines, header, natoms, tsnum, atomnames):
