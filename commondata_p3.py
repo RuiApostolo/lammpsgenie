@@ -135,7 +135,7 @@ def getAtomType(filename):
 
     Returns
     -------
-    atomnames : dict of str
+    atomnames : dict
         A dictionary with the LAMMPS atom type numbers as keys, and the
         custom atom type names as values.
         {1: 'CPS', 2: 'OCB'}
