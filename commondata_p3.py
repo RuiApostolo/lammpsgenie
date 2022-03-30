@@ -231,7 +231,8 @@ def getTS(traj, ts1, ts2):
     Parameters
     ----------
     traj : dict
-        A trajectory 'object' from readTS. Keys are the timestep labels.
+        A trajectory dict with more than one trajectory. Keys are the
+        timestep labels.
     ts1 : int or 'first'
         The timestep label for the start of the range.
         If 'first' uses the first timestep of the trajectory, regardless
@@ -258,3 +259,47 @@ def getTS(traj, ts1, ts2):
         if int(ts1) <= int(timestep) <= int(ts2):
             tsrange.append(timestep)
     return tsrange
+
+
+def getAtomData(filename, atomnames):
+    """
+    getAtomData
+    last modified: 13/03/14
+    """
+    lines = readAll(filename)
+    atomdata = {}
+    mass = {}
+    for line_idx, x in enumerate(lines):
+        if "atoms" in lines[line_idx]:
+            natoms = (lines[line_idx].split("atoms")[0])
+
+        if "atom types" in lines[line_idx]:
+            ntypes = (lines[line_idx].split("atom")[0])
+            print("ntypes "+str(ntypes))
+
+        if "Masses" in lines[line_idx]:
+            for j in range(int(ntypes)):
+                el = lines[line_idx+2+j].split()
+                print(el)
+                mass[el[3]] = float(el[1])
+                # printr(mass[el[4]])
+
+        if "Atoms" in lines[line_idx]:
+            columns = ['mol', 'type', 'charge', 'x', 'y', 'z']
+            print(columns)
+            print(columns[1])
+            for atom in range(int(natoms)):
+                el = lines[line_idx + 2 + atom].split()
+                atomid = int(el[0])
+                atomdata[atomid] = {}
+                for column in columns:
+                    if column in ['mol', 'type']:
+                        atomdata[atomid][column] = \
+                            int(el[columns.index(column) + 1])
+                    else:
+                        atomdata[atomid][column] = \
+                            float(el[columns.index(column) + 1])
+                    # print(atomnames)
+                atomdata[atomid]['type'] = \
+                    atomnames[int(atomdata[atomid]['type'])]
+    return atomdata, mass
