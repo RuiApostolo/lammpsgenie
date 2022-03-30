@@ -190,17 +190,22 @@ def test_readTS_fromFile(dumpfilelines,
 
 
 @pytest.mark.parametrize(
-    "filename, result", [
+    "filename, atomdata, masses", [
      ("uadodecane.data",
       {'mol': 1,
        'type': 'SCP',
        'charge': 0.0,
        'x': 36.114258,
        'y': 28.328382,
-       'z': 34.113575}
+       'z': 34.113575},
+      {'SCP': 15.035,
+       'SCS': 14.027}
       )
     ])
-def test_getAtomData(filename, result):
+def test_getAtomData(filename, atomdata, masses):
     assert cdp3.getAtomData(filename,
                             cdp3.getAtomType(filename)
-                            )[0][1] == result
+                            )[0][1] == atomdata
+    assert cdp3.getAtomData(filename,
+                            cdp3.getAtomType(filename)
+                            )[1] == masses

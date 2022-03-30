@@ -271,18 +271,17 @@ def getAtomData(filename, atomnames):
     mass = {}
     for line_idx, x in enumerate(lines):
         if "atoms" in lines[line_idx]:
-            natoms = (lines[line_idx].split("atoms")[0])
+            natoms = int(lines[line_idx].split("atoms")[0])
 
         if "atom types" in lines[line_idx]:
-            ntypes = (lines[line_idx].split("atom")[0])
-            print("ntypes "+str(ntypes))
+            ntypes = int(lines[line_idx].split("atom")[0])
+            print("ntypes ", ntypes)
 
         if "Masses" in lines[line_idx]:
-            for j in range(int(ntypes)):
-                el = lines[line_idx+2+j].split()
+            for atomtype in range(int(ntypes)):
+                el = lines[line_idx + 2 + atomtype].split()
                 print(el)
-                mass[el[3]] = float(el[1])
-                # printr(mass[el[4]])
+                mass[atomnames[int(el[0])]] = float(el[1])
 
         if "Atoms" in lines[line_idx]:
             columns = ['mol', 'type', 'charge', 'x', 'y', 'z']
