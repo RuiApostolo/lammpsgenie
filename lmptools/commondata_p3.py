@@ -3,71 +3,8 @@
 # Created by Michael Doig
 # ported to python3 by Rui Apóstolo
 # import command - to be pasted in program code
-import gzip
 import re
-"""
-from commondata import readAll, getNatoms, readTS, getTSrange, getAtomType
-from commondata import getAtomData, getTS, getAt, getMol, getTotMass, getCOMts
-from commondata import readcombmasses, readAllGzip
-"""
-###################################################################
-"""
-List of modules
-1) readAll
-2) getNatoms
-3) readTS
-4) getTSrange
-5) getAtomType
-6) getAtomData
-7) getTS
-8) getAt
-9) getMol
-10) getTotMass
-11) getCOMTS
-12) readcombmasses
-"""
-#############################################################
-
-
-def readAll(filename):
-    """
-    Reads the entire file in line-by-line and returns list of lines.
-
-    Parameters
-    ----------
-    filename : str
-        Name of file to be read.
-
-    Returns
-    -------
-    lines : list
-        A list containing the lines of the given file.
-    """
-
-    with open(filename, "r") as ifile:
-        lines = ifile.read().splitlines()
-    return lines
-
-
-def readAllGzip(filename):
-    """
-    Reads the entire gzipped file in line-by-line and returns list of
-    lines.
-
-    Parameters
-    ----------
-    filename : str
-        Name of file to be read.
-
-    Returns
-    -------
-    lines: list of str
-        A list containing the lines of given file.
-    """
-
-    with gzip.open(filename, "r") as ifile:
-        lines = ifile.readlines()
-    return lines
+import lmptools.readfiles as rdfl
 
 
 def getNatoms(lines):
@@ -285,7 +222,7 @@ def getAtomData(filename):
         type (str): mass (float)
     """
 
-    lines = readAll(filename)
+    lines = rdfl.readAll(filename)
     atomnames = getAtomType(filename)
     atomdata = {}
     masses = {}

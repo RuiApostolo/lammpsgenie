@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="lmptools",
-    version="0.0.2",
+    version="0.0.3",
     author="Rui Apóstolo",
     author_email="ruiapostolo@gmail.com",
     description="A package to help with LAMMPS data and dump files",
@@ -21,7 +21,7 @@ setuptools.setup(
         "Development Status :: 3 - Alpha",
         "Operating System :: Unix"
         ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "lmptools"},
+    packages=setuptools.find_packages(where="lmptools"),
     python_requires=">=3.6"
 )
