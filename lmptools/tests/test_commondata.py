@@ -1,24 +1,6 @@
 import pytest
 import lmptools.commondata_p3 as cdp3
-import lmptools.readfiles as rdfl
-#  import lmpdttrj.commondata_p3 as cdp3
-
-# imports fixtures in ./conftest.py automatically
-
-
-def test_getNatoms_fromDummy(dummy_dump):
-    assert cdp3.getNatoms(dummy_dump) == 16889
-
-
-@pytest.fixture
-def dumpfilelines():
-    tdump = rdfl.readAll("tests/dump.uadodecane.lammpstrj")
-    return tdump
-
-
-@pytest.mark.parametrize("natoms", [2400])
-def test_getNatoms_fromFile(dumpfilelines, natoms):
-    assert cdp3.getNatoms(dumpfilelines) == natoms
+import lmptools.atoms as atoms
 
 
 def test_getTSrange_fromDummy(dummy_dump):
@@ -31,14 +13,6 @@ def test_getTSrange_fromDummy(dummy_dump):
      ])
 def test_getTSrange_fromFile(dumpfilelines, timesteps):
     assert cdp3.getTSrange(dumpfilelines) == timesteps
-
-
-@pytest.mark.parametrize(
-    "datafile, atomtypes", [
-         ("tests/uadodecane.data", {1: 'SCP', 2: 'SCS'})
-    ])
-def test_getAtomType(datafile, atomtypes):
-    assert cdp3.getAtomType("tests/uadodecane.data") == atomtypes
 
 
 @pytest.mark.parametrize(
@@ -129,7 +103,7 @@ def test_readTS_fromFile(dumpfilelines,
                          properties):
     traj = cdp3.readTS(dumpfilelines,
                        framenumber,
-                       cdp3.getAtomType("tests/uadodecane.data"),
+                       atoms.getAtomType("tests/uadodecane.data"),
                        9
                        )
     frame = cdp3.getTSrange(dumpfilelines)[framenumber-1]
@@ -139,21 +113,3 @@ def test_readTS_fromFile(dumpfilelines,
     assert traj[frame]['atom'][atomnumber] == properties
 
 # TODO: getTS
-
-
-@pytest.mark.parametrize(
-    "filename, atomdata, masses", [
-     ("tests/uadodecane.data",
-      {'mol': 1,
-       'type': 'SCP',
-       'charge': 0.0,
-       'x': 36.114258,
-       'y': 28.328382,
-       'z': 34.113575},
-      {'SCP': 15.035,
-       'SCS': 14.027}
-      )
-    ])
-def test_getAtomData(filename, atomdata, masses):
-    assert cdp3.getAtomData(filename)[0][1] == atomdata
-    assert cdp3.getAtomData(filename)[1] == masses

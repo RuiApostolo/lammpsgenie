@@ -1,4 +1,6 @@
 import pytest
+import lmptools.readfiles as rdfl
+
 
 @pytest.fixture
 def dummy_dump():
@@ -20,3 +22,9 @@ def dummy_dump():
          "0.0000000000000000e+00 5.0380000000000003e+01",
          "-2.0000000000000000e+01 1.9000000000000000e+02"
          ]
+
+
+@pytest.fixture
+def dumpfilelines():
+    tdump = rdfl.readAll("tests/dump.uadodecane.lammpstrj")
+    return tdump
