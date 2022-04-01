@@ -121,7 +121,6 @@ def getTSrange(lines):
     return tsrange
 
 
-# TODO here downwards
 def getAtomType(filename):
     """
     Reads data file and returns a dictionary of the atom types, retrieved
@@ -261,12 +260,12 @@ def getTS(traj, ts1, ts2):
     return tsrange
 
 
-def getAtomData(filename, atomnames):
+def getAtomData(filename):
     """
-    getAtomData
-    last modified: 13/03/14
+    Reads in a data file and
     """
     lines = readAll(filename)
+    atomnames = getAtomType(filename)
     atomdata = {}
     mass = {}
     for line_idx, x in enumerate(lines):

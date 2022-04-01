@@ -1,3 +1,4 @@
+ #!/usr/bin/python2
 ########
 
 #module containing commonly used data reading and analysis tools
@@ -205,7 +206,7 @@ def getAtomType(fn):
         line = file.readline()
         if "atom types" in line:
             sp = line.split()
-            print "split at atom types "
+            print("split at atom types ")
             natomtypes = int(sp[0])
             #print 'natom types: '+str(natomtypes)
             atomnames = {}
@@ -223,7 +224,6 @@ def getAtomType(fn):
 
 
 
-# Not done from here down:
 
 
 """
@@ -268,6 +268,11 @@ def getAtomData(fn, atomnames):
                     #print atomnames
                 atomdata[atomid]['type'] = atomnames[atomdata[atomid]['type']]
     return atomdata, mass
+
+
+
+# Not done from here down:
+
 
 ##########################################################
 

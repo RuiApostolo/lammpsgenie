@@ -1,5 +1,6 @@
 import pytest
 import commondata_p3 as cdp3
+#  import lmpdttrj.commondata_p3 as cdp3
 
 
 @pytest.mark.parametrize(
@@ -203,9 +204,5 @@ def test_readTS_fromFile(dumpfilelines,
       )
     ])
 def test_getAtomData(filename, atomdata, masses):
-    assert cdp3.getAtomData(filename,
-                            cdp3.getAtomType(filename)
-                            )[0][1] == atomdata
-    assert cdp3.getAtomData(filename,
-                            cdp3.getAtomType(filename)
-                            )[1] == masses
+    assert cdp3.getAtomData(filename)[0][1] == atomdata
+    assert cdp3.getAtomData(filename)[1] == masses
