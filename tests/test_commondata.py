@@ -1,5 +1,5 @@
 import pytest
-import commondata_p3 as cdp3
+import src.commondata_p3 as cdp3
 #  import lmpdttrj.commondata_p3 as cdp3
 
 
