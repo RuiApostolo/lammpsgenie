@@ -68,9 +68,9 @@ def readTS(lines, tsnum, atomnames, header=9):
             traj[ts] = {}
             traj[ts]["atom"] = {}
         if any(s in lines[line] for s in ["BOX BOUNDS", "xy xz yz pp pp"]):
-            boxx = list(map(float, lines[line+1].split()))
-            boxy = list(map(float, lines[line+2].split()))
-            boxz = list(map(float, lines[line+3].split()))
+            boxx = list(map(float, lines[line + 1].split()))
+            boxy = list(map(float, lines[line + 2].split()))
+            boxz = list(map(float, lines[line + 3].split()))
             lx = boxx[1] - boxx[0]
             ly = boxy[1] - boxy[0]
             lz = boxz[1] - boxz[0]
