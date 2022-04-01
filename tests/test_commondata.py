@@ -1,5 +1,5 @@
 import pytest
-import src.commondata_p3 as cdp3
+import lmptools.commondata_p3 as cdp3
 #  import lmpdttrj.commondata_p3 as cdp3
 
 
