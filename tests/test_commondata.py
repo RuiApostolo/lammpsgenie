@@ -5,10 +5,10 @@ import commondata_p3 as cdp3
 
 @pytest.mark.parametrize(
     "filename, lines", [
-        ("Fe2O3_50_down.lammps", 14120),
-        ("Fe2O3_50_up.lammps", 14120),
-        ("Fe2O3_100_down.lammps", 56360),
-        ("Fe2O3_100_up.lammps", 56360)
+        ("tests/Fe2O3_50_down.lammps", 14120),
+        ("tests/Fe2O3_50_up.lammps", 14120),
+        ("tests/Fe2O3_100_down.lammps", 56360),
+        ("tests/Fe2O3_100_up.lammps", 56360)
     ])
 def test_readAll_fromParameters(filename, lines):
     assert len(cdp3.readAll(filename)) == lines
@@ -16,7 +16,7 @@ def test_readAll_fromParameters(filename, lines):
 
 @pytest.mark.parametrize(
     "filename, nlines", [
-        ("dump.uadodecane.lammpstrj", 14454)
+        ("tests/dump.uadodecane.lammpstrj", 14454)
     ])
 def test_readAll_fromFile(filename, nlines):
     assert len(cdp3.readAll(filename)) == nlines
@@ -24,10 +24,10 @@ def test_readAll_fromFile(filename, nlines):
 
 @pytest.mark.parametrize(
     "filename, lines", [
-        ("Fe2O3_50_down.lammps.gz", 14120),
-        ("Fe2O3_50_up.lammps.gz", 14120),
-        ("Fe2O3_100_down.lammps.gz", 56360),
-        ("Fe2O3_100_up.lammps.gz", 56360)
+        ("tests/Fe2O3_50_down.lammps.gz", 14120),
+        ("tests/Fe2O3_50_up.lammps.gz", 14120),
+        ("tests/Fe2O3_100_down.lammps.gz", 56360),
+        ("tests/Fe2O3_100_up.lammps.gz", 56360)
     ])
 def test_readAllGzip(filename, lines):
     assert len(cdp3.readAllGzip(filename)) == lines
@@ -61,7 +61,7 @@ def test_getNatoms_fromDummy(dummy_dump):
 
 @pytest.fixture
 def dumpfilelines():
-    tdump = cdp3.readAll("dump.uadodecane.lammpstrj")
+    tdump = cdp3.readAll("tests/dump.uadodecane.lammpstrj")
     return tdump
 
 
@@ -84,10 +84,10 @@ def test_getTSrange_fromFile(dumpfilelines, timesteps):
 
 @pytest.mark.parametrize(
     "datafile, atomtypes", [
-         ("uadodecane.data", {1: 'SCP', 2: 'SCS'})
+         ("tests/uadodecane.data", {1: 'SCP', 2: 'SCS'})
     ])
 def test_getAtomType(datafile, atomtypes):
-    assert cdp3.getAtomType("uadodecane.data") == atomtypes
+    assert cdp3.getAtomType("tests/uadodecane.data") == atomtypes
 
 
 @pytest.mark.parametrize(
@@ -178,7 +178,7 @@ def test_readTS_fromFile(dumpfilelines,
                          properties):
     traj = cdp3.readTS(dumpfilelines,
                        framenumber,
-                       cdp3.getAtomType("uadodecane.data"),
+                       cdp3.getAtomType("tests/uadodecane.data"),
                        9
                        )
     frame = cdp3.getTSrange(dumpfilelines)[framenumber-1]
@@ -192,7 +192,7 @@ def test_readTS_fromFile(dumpfilelines,
 
 @pytest.mark.parametrize(
     "filename, atomdata, masses", [
-     ("uadodecane.data",
+     ("tests/uadodecane.data",
       {'mol': 1,
        'type': 'SCP',
        'charge': 0.0,
