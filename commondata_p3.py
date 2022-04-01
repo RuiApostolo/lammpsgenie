@@ -262,12 +262,33 @@ def getTS(traj, ts1, ts2):
 
 def getAtomData(filename):
     """
-    Reads in a data file and
+    Reads in a data file, returns atom data, including mass.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the datafile to be read.
+
+    Returns
+    -------
+    atomdata : dict
+        Each entry of the dictionary takes the form:
+        atomid (int): {'mol': int,
+                       'type': str,
+                       'charge': float,
+                       'x': float,
+                       'y': float,
+                       'z': float}
+
+    masses : dict
+        The atomic masses. Each entry takes the form:
+        type (str): mass (float)
     """
+
     lines = readAll(filename)
     atomnames = getAtomType(filename)
     atomdata = {}
-    mass = {}
+    masses = {}
     for line_idx, x in enumerate(lines):
         if "atoms" in lines[line_idx]:
             natoms = int(lines[line_idx].split("atoms")[0])
@@ -280,7 +301,7 @@ def getAtomData(filename):
             for atomtype in range(int(ntypes)):
                 el = lines[line_idx + 2 + atomtype].split()
                 print(el)
-                mass[atomnames[int(el[0])]] = float(el[1])
+                masses[atomnames[int(el[0])]] = float(el[1])
 
         if "Atoms" in lines[line_idx]:
             columns = ['mol', 'type', 'charge', 'x', 'y', 'z']
@@ -300,4 +321,4 @@ def getAtomData(filename):
                     # print(atomnames)
                 atomdata[atomid]['type'] = \
                     atomnames[int(atomdata[atomid]['type'])]
-    return atomdata, mass
+    return atomdata, masses
