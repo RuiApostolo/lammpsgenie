@@ -1,0 +1,44 @@
+package require topotools
+package require pbctools
+set name "ketene"
+mol new $name.xyz
+topo guess type element
+# Setting properties
+# CHK
+set selCHK [atomselect top "serial 1"]
+$selCHK set element C
+$selCHK set charge -0.25
+$selCHK set type CHK
+$selCHK set mass 12.011
+# COK
+set selCOK [atomselect top "serial 2"]
+$selCOK set element C
+$selCOK set charge 0.20
+$selCOK set type COK
+$selCOK set mass 12.011
+# OCK
+set selOCK [atomselect top "serial 3"]
+$selOCK set element O
+$selOCK set charge -0.25
+$selOCK set type OCK
+$selOCK set mass 15.999
+# HCK
+set selHCK [atomselect top "serial 4 5"]
+$selHCK set element H
+$selHCK set charge 0.15
+$selHCK set type HCK
+$selHCK set mass 1.008
+
+# set pbc box
+pbc set {5.0 5.0 5.0}
+pbc box -center com
+
+# Guessing bonds, angles, dihedrals
+topo guessbonds
+topo bondsrecalc all
+topo retypebonds
+topo guessangles
+topo guessdihedrals
+topo guessimpropers
+topo writelammpsdata $name.lammps
+exit
