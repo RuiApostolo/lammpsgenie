@@ -41,6 +41,10 @@ vmd -dispdev text -e <molecule>.vmd
 ```
 which contains the charge values for each atom, then set the pair, bond, angle, dihedral, and improper parameters, see the corresponding section for each molecule, below.
 
+`.lammps` files were then compressed to `.gz` using the command:
+```
+gzip -k <molecule>.lammps
+```
 
 ## Force field parameters
 
