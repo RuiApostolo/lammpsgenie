@@ -1,0 +1,38 @@
+package require topotools
+package require pbctools
+set name "oxirene"
+mol new $name.xyz
+topo guess type element
+# Setting properties
+# COO
+set selCOO [atomselect top "serial 1 2"]
+$selCOO set element C
+$selCOO set charge 0.135
+$selCOO set type COO
+$selCOO set mass 12.011
+# OCO
+set selOCO [atomselect top "serial 3"]
+$selOCO set element O
+$selOCO set charge -0.40
+$selOCO set type OCO
+$selOCO set mass 15.999
+# HCO
+set selHCO [atomselect top "serial 4 5"]
+$selHCO set element H
+$selHCO set charge 0.115
+$selHCO set type HCO
+$selHCO set mass 1.008
+
+# set pbc box
+pbc set {5.0 5.0 5.0}
+pbc box -center com
+
+# Guessing bonds, angles, dihedrals
+topo guessbonds
+topo bondsrecalc all
+topo retypebonds
+topo guessangles
+topo guessdihedrals
+topo guessimpropers
+topo writelammpsdata $name.lammps
+exit
