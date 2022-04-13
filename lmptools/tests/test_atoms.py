@@ -66,6 +66,62 @@ class TestAtomData:
                      'zlo': -2.32406, 'zhi': 2.67594},
                     ]
 
+    ref_pair_coeffs = [{1: [0.175, 3.905],
+                        2: [0.118, 3.905]},
+                       {1: [0.086, 3.3],
+                        2: [0.086, 3.3],
+                        3: [0.03, 2.42],
+                        4: [0.21, 2.96]},
+                       {1: [0.076, 3.75],
+                        2: [0.03, 2.42],
+                        3: [0.14, 2.9]},
+                       {1: [0.086, 3.3],
+                        2: [0.1, 3.3],
+                        3: [0.015, 2.42],
+                        4: [0.0, 0.0],
+                        5: [0.17, 3.12]}
+                       ]
+
+    ref_bond_coeffs = [{1: [130.0, 1.526],
+                        2: [130.0, 1.526]},
+                       {1: [350.0, 1.305],
+                        2: [170.0, 1.08],
+                        3: [350.0, 1.171]},
+                       {1: [274.5, 1.34],
+                        2: [170.0, 1.08],
+                        3: [225.0, 1.37]},
+                       {1: [575.0, 1.21],
+                        2: [210.0, 1.08],
+                        3: [275.0, 0.137],
+                        4: [276.5, 0.945]}
+                       ]
+
+    ref_angle_coeffs = [{1: [31.5, 112.4],
+                         2: [31.5, 112.4]},
+                        {1: [80.0, 180.0],
+                         2: [17.5, 117.0],
+                         3: [17.5, 117.0]},
+                        {1: [17.5, 120.0],
+                         2: [35.0, 123.0],
+                         3: [37.5, 60.0],
+                         4: [17.5, 114.5]},
+                        {1: [75.0, 180.0],
+                         2: [56.0, 180.0],
+                         3: [17.5, 109.0]}
+                        ]
+
+    ref_dihedral_coeffs = [{1: [-3.4, 1.25, 3.1, 0.0],
+                            2: [-3.4, 1.25, 3.1, 0.0]},
+                           {1: [0.0, 0.0, 0.0, 0.0]},
+                           {1: [-3.5, 3.0, 0.0, 0.0],
+                            2: [0.0, 14.0, 0.0, 0.0],
+                            3: [0.0, 14.0, 0.0, 0.0],
+                            4: [0.0, 0.0, 0.76, 0.0],
+                            5: [0.0, 14.0, 0.0, 0.0]},
+                           {1: [0.0, 0.0, 0.0, 0.0],
+                            2: [0.0, 0.0, 0.0, 0.0]}
+                           ]
+
     @pytest.mark.parametrize("datafile, types",
                              zipRefs(ref_data_files(),
                                      ref_atom_types))
@@ -80,12 +136,35 @@ class TestAtomData:
         assert atoms.getAtomData(datafile)[0][1] == atomdata
         assert atoms.getAtomData(datafile)[1] == masses
 
-    @pytest.mark.parametrize("datafile, atomdata, masses, boxsizes",
+    @pytest.mark.parametrize("datafile, \
+                             atomdata, \
+                             masses, \
+                             boxsizes, \
+                             paircoeffs, \
+                             bondcoeffs, \
+                             anglecoeffs, \
+                             dihedralcoeffs",
                              zipRefs(ref_data_files(),
                                      ref_atom_data,
                                      ref_masses,
-                                     ref_boxsizes))
-    def test_getAllAtomData(self, datafile, atomdata, masses, boxsizes):
+                                     ref_boxsizes,
+                                     ref_pair_coeffs,
+                                     ref_bond_coeffs,
+                                     ref_angle_coeffs,
+                                     ref_dihedral_coeffs))
+    def test_getAllAtomData(self,
+                            datafile,
+                            atomdata,
+                            masses,
+                            boxsizes,
+                            paircoeffs,
+                            bondcoeffs,
+                            anglecoeffs,
+                            dihedralcoeffs):
         assert atoms.getAllAtomData(datafile)[0][1] == atomdata
         assert atoms.getAllAtomData(datafile)[5] == masses
         assert atoms.getAllAtomData(datafile)[6] == boxsizes
+        assert atoms.getAllAtomData(datafile)[8] == paircoeffs
+        assert atoms.getAllAtomData(datafile)[9] == bondcoeffs
+        assert atoms.getAllAtomData(datafile)[10] == anglecoeffs
+        assert atoms.getAllAtomData(datafile)[11] == dihedralcoeffs

@@ -112,7 +112,7 @@ def getAtomData(filename):
     return atomdata, masses
 
 
-# TODO
+# TODO sort out print commands
 def getAllAtomData(filename):
     lines = rdfl.readAll(filename)
     atomnames = getAtomType(filename)
@@ -122,10 +122,6 @@ def getAllAtomData(filename):
     dhdata = {}
     impdata = {}
     boxsize = {}
-    pair = {}
-    bond = {}
-    angle = {}
-    dh = {}
     imp = {}
 
     numdata = {}
@@ -160,9 +156,9 @@ def getAllAtomData(filename):
             numdata['nangletypes'] = nangletypes
             print("nangletypes "+str(nangletypes))
         elif "dihedral types" in line:
-            ndhtypes = _getFirst(line, "dihedral")
-            numdata['ndhtypes'] = ndhtypes
-            print("ndhtypes "+str(ndhtypes))
+            ndihedraltypes = _getFirst(line, "dihedral")
+            numdata['ndihedraltypes'] = ndihedraltypes
+            print("ndihedraltypes "+str(ndihedraltypes))
         elif "improper types" in line:
             nimptypes = _getFirst(line, "improper")
             numdata['nimptypes'] = nimptypes
@@ -172,70 +168,24 @@ def getAllAtomData(filename):
             low, high = line.split()[2:4]
             boxsize[low], boxsize[high] = map(float, line.split()[0:2])
 
+        # TODO: try something like above for coeffs
+        #  coeff_list = ["Pair Coeffs"]
+        #  elif any(coeff in line for coeff in coeff_list):
+
         elif "Pair Coeffs" in line:
-            columns = ['eps', 'sig', '#', 'label']
-            for j in range(int(natomtypes)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        paircoeffid = int(el[0])
-                        pair[paircoeffid] = {}
-                        pair[paircoeffid][str(col)] = {}
-                    pair[paircoeffid][str(col)] = (el[col_idx + 1])
-            print("Pair Coeffs:")
-            print(pair)
+            pair = _getCoeffs(lines, line_idx, natomtypes)
 
         elif "Bond Coeffs" in line:
-            columns = ['k', 'r', '#', 'label']
-            for j in range(int(nbondtypes)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        bondcoeffid = int(el[0])
-                        bond[bondcoeffid] = {}
-                        bond[bondcoeffid][str(col)] = {}
-                    bond[bondcoeffid][str(col)] = (el[col_idx+1])
-            print("Bond Coeffs")
-            print(bond)
+            bond = _getCoeffs(lines, line_idx, nbondtypes)
 
         elif "Angle Coeffs" in line:
-            columns = ['k', 'theta', '#', 'label']
-            for j in range(int(nangletypes)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        anglecoeffid = int(el[0])
-                        angle[anglecoeffid] = {}
-                        angle[anglecoeffid][str(col)] = {}
-                    angle[anglecoeffid][str(col)] = (el[col_idx+1])
-            print("Angle Coeffs")
-            print(angle)
+            angle = _getCoeffs(lines, line_idx, nangletypes)
 
         elif "Dihedral Coeffs" in line:
-            columns = ['a', 'b', 'c', 'd', '#', 'label']
-            for j in range(int(ndhtypes)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        dhcoeffid = int(el[0])
-                        dh[dhcoeffid] = {}
-                        dh[dhcoeffid][str(col)] = {}
-                    dh[dhcoeffid][str(col)] = (el[col_idx+1])
-            print("Dihedral Coeffs")
-            print(dh)
+            dihedral = _getCoeffs(lines, line_idx, ndihedraltypes)
 
         elif "Improper Coeffs" in line:
-            columns = ['a', 'b', 'c', 'd', '#', 'label']
-            for j in range(int(nimptypes)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        impcoeffid = int(el[0])
-                        imp[impcoeffid] = {}
-                        imp[impcoeffid][str(col)] = {}
-                    imp[impcoeffid][str(col)] = (el[col_idx+1])
-            print("Improper Coeffs")
-            print(imp)
+            imp = _getCoeffs(lines, line_idx, nimptypes)
 
         elif "Masses" in line:
             masses = _getMasses(lines, line_idx, natomtypes, atomnames)
@@ -288,7 +238,7 @@ def getAllAtomData(filename):
                     impdata[impid][str(col)] = int(el[col_idx+1])
 
     return atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, \
-        numdata, pair, bond, angle, dh, imp
+        numdata, pair, bond, angle, dihedral, imp
 
 
 ###############################################################################
@@ -392,3 +342,52 @@ def _getAtoms(lines, line_idx, natoms, atomnames):
         atomdata[atomid]['type'] = \
             atomnames[int(atomdata[atomid]['type'])]
     return atomdata
+
+
+def _getParams(params):
+    """
+    Returns split parameters as floats, not including index.
+
+    Parameters
+    ----------
+    params : list of str
+        Parameters to be split.
+
+    Returns
+    -------
+    params : list of floats
+        a list of the parameters transformed to floats.
+    """
+
+    params = params.split()
+    params = list(map(float, params))
+    return params[1:]
+
+
+def _getCoeffs(lines, line_idx, number):
+    """
+    Returns split parameters as floats, not including index.
+
+    Parameters
+    ----------
+    lines : list of str
+        List of lines from dumpfile.
+    line_idx : int
+        Index of current line
+    number : int
+        Number of lines to read through - natomtypes, nbondtypes, etc.
+
+    Returns
+    -------
+    dict
+        Dictionary where keys are the type number (int), and the values are
+        lists with the parameters.
+    """
+
+    result = {}
+    for coeff in range(1, int(number) + 1):
+        params, comment = lines[line_idx + 1 + coeff].split('#')
+        result[coeff] = _getParams(params)
+    #  print("Angle Coeffs")
+    #  print(angle)
+    return result
