@@ -1,4 +1,5 @@
 import pytest
+from conftest import zipRefs, ref_data_files
 import lmptools.atoms as atoms
 import lmptools.commondata_p3 as cdp3
 
@@ -13,13 +14,6 @@ def test_getNatoms_fromFile(dumpfilelines, natoms):
 
 
 class TestAtomData:
-    filenames = ("uadodecane.data",
-                 "ketene.lammps",
-                 "oxirene.lammps",
-                 "ethynol.lammps")
-
-    ref_files = ["tests/" + a for a in filenames]
-
     ref_atom_types = [{1: 'SCP', 2: 'SCS'},
                       {1: 'CHK', 2: 'COK', 3: 'HCK', 4: 'OCK'},
                       {1: 'COO', 2: 'HCO', 3: 'OCO'},
@@ -73,21 +67,24 @@ class TestAtomData:
                     ]
 
     @pytest.mark.parametrize("datafile, types",
-                             list(zip(ref_files, ref_atom_types)))
+                             zipRefs(ref_data_files(),
+                                     ref_atom_types))
     def test_getAtomType(self, datafile, types):
         assert atoms.getAtomType(datafile) == types
 
     @pytest.mark.parametrize("datafile, atomdata, masses",
-                             list(zip(ref_files, ref_atom_data, ref_masses)))
+                             zipRefs(ref_data_files(),
+                                     ref_atom_data,
+                                     ref_masses))
     def test_getAtomData(self, datafile, atomdata, masses):
         assert atoms.getAtomData(datafile)[0][1] == atomdata
         assert atoms.getAtomData(datafile)[1] == masses
 
     @pytest.mark.parametrize("datafile, atomdata, masses, boxsizes",
-                             list(zip(ref_files,
-                                      ref_atom_data,
-                                      ref_masses,
-                                      ref_boxsizes)))
+                             zipRefs(ref_data_files(),
+                                     ref_atom_data,
+                                     ref_masses,
+                                     ref_boxsizes))
     def test_getAllAtomData(self, datafile, atomdata, masses, boxsizes):
         assert atoms.getAllAtomData(datafile)[0][1] == atomdata
         assert atoms.getAllAtomData(datafile)[5] == masses

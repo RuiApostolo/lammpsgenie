@@ -28,3 +28,15 @@ def dummy_dump():
 def dumpfilelines():
     tdump = rdfl.readAll("tests/dump.uadodecane.lammpstrj")
     return tdump
+
+
+def ref_data_files():
+    datafiles = ("uadodecane.data",
+                 "ketene.lammps",
+                 "oxirene.lammps",
+                 "ethynol.lammps")
+    return ["tests/" + a for a in datafiles]
+
+
+def zipRefs(*args):
+    return list(zip(*args))
