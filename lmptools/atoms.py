@@ -347,7 +347,7 @@ def _getAtoms(lines, line_idx, natoms, atomnames):
     return atomdata
 
 
-def _getParams(params):
+def _getParams(params, ptype):
     """
     Returns split parameters as floats, not including index.
 
@@ -363,13 +363,13 @@ def _getParams(params):
     """
 
     params = params.split()
-    params = list(map(float, params))
+    params = list(map(ptype, params))
     return params[1:]
 
 
 def _getCoeffs(lines, line_idx, number):
     """
-    Returns split parameters as floats, not including index.
+    Returns dictionary with coefficients.
 
     Parameters
     ----------
@@ -384,22 +384,23 @@ def _getCoeffs(lines, line_idx, number):
     -------
     dict
         Dictionary where keys are the type number (int), and the values are
-        lists with the parameters.
+        lists with the parameters of the pair, bond, angle, dihedral, or
+        improper.
     """
 
     result = {}
     for coeff in range(1, int(number) + 1):
         params, comment = lines[line_idx + 1 + coeff].split('#')
-        result[coeff] = _getParams(params) + [comment]
+        result[coeff] = _getParams(params, float) + [comment]
     #  print("Angle Coeffs")
     #  print(angle)
     return result
 
 
 # TODO: get better name
-def _getLinks(lines, line_idx, number):
+def _getBADI(lines, line_idx, number):
     """
-    Returns split parameters as floats, not including index.
+    Returns dictionary with atom numbers for the bond/angle/dihedral/improper.
 
     Parameters
     ----------
@@ -413,12 +414,10 @@ def _getLinks(lines, line_idx, number):
     Returns
     -------
     dict
-        Dictionary where keys are the type number (int), and the values are
-        lists with the parameters.
+        Dictionary where keys are the index (int), and the values are lists
+        of the atoms in the bond, angle, dihedral, or improper.
     """
     result = {}
     for line in range(1, int(number) + 1):
-        params, comment = lines[line_idx + 1 + line].split('#')
-        result[line] = _getParams(params)
-
+        result[line] = _getParams(lines[line_idx + 1 + line], int)
     return result
