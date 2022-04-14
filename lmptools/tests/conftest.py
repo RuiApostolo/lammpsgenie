@@ -31,11 +31,20 @@ def dumpfilelines():
 
 
 def ref_data_files():
-    datafiles = ("uadodecane.data",
-                 "ketene.lammps",
-                 "oxirene.lammps",
-                 "ethynol.lammps")
-    return ["tests/" + a for a in datafiles]
+    datafiles = (
+        "ketene.lammps",
+        "oxirene.lammps",
+        "ethynol.lammps"
+                 )
+    return _add_testd(datafiles)
+
+
+def ref_data_files_large():
+    return _add_testd(["uadodecane.data"]) + ref_data_files()
+
+
+def _add_testd(files: list):
+    return ["tests/" + a for a in files]
 
 
 def zipRefs(*args):

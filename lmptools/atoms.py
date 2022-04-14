@@ -197,48 +197,16 @@ def getAllAtomData(filename):
             atomdata = _getAtoms(lines, line_idx, natoms, atomnames)
 
         elif "Bonds" in line:
-            columns = ['bondtype', 'at1', 'at2']
-            for j in range(int(nbonds)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        bondid = int(el[0])
-                        bonddata[bondid] = {}
-                        bonddata[bondid][str(col)] = {}
-                    bonddata[bondid][str(col)] = int(el[col_idx+1])
+            bonddata = _getBADI(lines, line_idx, nbonds)
 
         elif "Angles" in line:
-            columns = ['angletype', 'at1', 'at2', 'at3']
-            for j in range(int(nangles)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        angleid = int(el[0])
-                        angledata[angleid] = {}
-                        angledata[angleid][str(col)] = {}
-                    angledata[angleid][str(col)] = int(el[col_idx+1])
+            angledata = _getBADI(lines, line_idx, nangles)
 
         elif "Dihedrals" in line:
-            columns = ['dhtype', 'at1', 'at2', 'at3', 'at4']
-            for j in range(int(ndh)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        dhid = int(el[0])
-                        dhdata[dhid] = {}
-                        dhdata[dhid][str(col)] = {}
-                    dhdata[dhid][str(col)] = int(el[col_idx+1])
+            dhdata = _getBADI(lines, line_idx, ndh)
 
         elif "Impropers" in line:
-            columns = ['imptype', 'at1', 'at2', 'at3', 'at4']
-            for j in range(int(nimp)):
-                el = lines[line_idx+2+j].split()
-                for col_idx, col in enumerate(columns):
-                    if col_idx == 0:
-                        impid = int(el[0])
-                        impdata[impid] = {}
-                        impdata[impid][str(col)] = {}
-                    impdata[impid][str(col)] = int(el[col_idx+1])
+            impdata = _getBADI(lines, line_idx, nimp)
 
     return atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, \
         numdata, pair, bond, angle, dihedral, imp
