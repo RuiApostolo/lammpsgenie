@@ -122,6 +122,10 @@ def getAllAtomData(filename):
     dhdata = {}
     impdata = {}
     boxsize = {}
+    pair = {}
+    bond = {}
+    angle = {}
+    dihedral = {}
     imp = {}
 
     numdata = {}
@@ -169,7 +173,6 @@ def getAllAtomData(filename):
             boxsize[low], boxsize[high] = map(float, line.split()[0:2])
 
         # TODO: try something like above for coeffs
-        #  coeff_list = ["Pair Coeffs"]
         #  elif any(coeff in line for coeff in coeff_list):
 
         elif "Pair Coeffs" in line:
@@ -387,7 +390,35 @@ def _getCoeffs(lines, line_idx, number):
     result = {}
     for coeff in range(1, int(number) + 1):
         params, comment = lines[line_idx + 1 + coeff].split('#')
-        result[coeff] = _getParams(params)
+        result[coeff] = _getParams(params) + [comment]
     #  print("Angle Coeffs")
     #  print(angle)
+    return result
+
+
+# TODO: get better name
+def _getLinks(lines, line_idx, number):
+    """
+    Returns split parameters as floats, not including index.
+
+    Parameters
+    ----------
+    lines : list of str
+        List of lines from dumpfile.
+    line_idx : int
+        Index of current line
+    number : int
+        Number of lines to read through - nbonds, nangles, etc.
+
+    Returns
+    -------
+    dict
+        Dictionary where keys are the type number (int), and the values are
+        lists with the parameters.
+    """
+    result = {}
+    for line in range(1, int(number) + 1):
+        params, comment = lines[line_idx + 1 + line].split('#')
+        result[line] = _getParams(params)
+
     return result

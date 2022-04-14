@@ -66,60 +66,93 @@ class TestAtomData:
                      'zlo': -2.32406, 'zhi': 2.67594},
                     ]
 
-    ref_pair_coeffs = [{1: [0.175, 3.905],
-                        2: [0.118, 3.905]},
-                       {1: [0.086, 3.3],
-                        2: [0.086, 3.3],
-                        3: [0.03, 2.42],
-                        4: [0.21, 2.96]},
-                       {1: [0.076, 3.75],
-                        2: [0.03, 2.42],
-                        3: [0.14, 2.9]},
-                       {1: [0.086, 3.3],
-                        2: [0.1, 3.3],
-                        3: [0.015, 2.42],
-                        4: [0.0, 0.0],
-                        5: [0.17, 3.12]}
-                       ]
-
-    ref_bond_coeffs = [{1: [130.0, 1.526],
-                        2: [130.0, 1.526]},
-                       {1: [350.0, 1.305],
-                        2: [170.0, 1.08],
-                        3: [350.0, 1.171]},
-                       {1: [274.5, 1.34],
-                        2: [170.0, 1.08],
-                        3: [225.0, 1.37]},
-                       {1: [575.0, 1.21],
-                        2: [210.0, 1.08],
-                        3: [275.0, 0.137],
-                        4: [276.5, 0.945]}
-                       ]
-
-    ref_angle_coeffs = [{1: [31.5, 112.4],
-                         2: [31.5, 112.4]},
-                        {1: [80.0, 180.0],
-                         2: [17.5, 117.0],
-                         3: [17.5, 117.0]},
-                        {1: [17.5, 120.0],
-                         2: [35.0, 123.0],
-                         3: [37.5, 60.0],
-                         4: [17.5, 114.5]},
-                        {1: [75.0, 180.0],
-                         2: [56.0, 180.0],
-                         3: [17.5, 109.0]}
+    ref_pair_coeffs = [
+        {1: [0.175, 3.905, ' 1  SCP 10 '],
+         2: [0.118, 3.905, ' 2  SCS 13 ']},
+        {1: [0.086, 3.3, ' 1  CHK 900/47'],
+         2: [0.086, 3.3, ' 2  COK 904/110'],
+         3: [0.03, 2.42, ' 3  HCK 899/46'],
+         4: [0.21, 2.96, ' 4  OCK 905/4']},
+        {1: [0.076, 3.75, ' 1  COO 87/47'],
+         2: [0.03, 2.42, ' 2  HCO 89/46'],
+         3: [0.14, 2.9, ' 3  OCO 122/20']},
+        {1: [0.086, 3.3, ' 1  CHE 755/19'],
+         2: [0.1, 3.3, ' 2  COE 759/19'],
+         3: [0.015, 2.42, ' 3  HCE 756/46'],
+         4: [0.0, 0.0, ' 4  HOE 97/7'],
+         5: [0.17, 3.12, ' 5  OHE 96/5']}
                         ]
 
-    ref_dihedral_coeffs = [{1: [-3.4, 1.25, 3.1, 0.0],
-                            2: [-3.4, 1.25, 3.1, 0.0]},
-                           {1: [0.0, 0.0, 0.0, 0.0]},
-                           {1: [-3.5, 3.0, 0.0, 0.0],
-                            2: [0.0, 14.0, 0.0, 0.0],
-                            3: [0.0, 14.0, 0.0, 0.0],
-                            4: [0.0, 0.0, 0.76, 0.0],
-                            5: [0.0, 14.0, 0.0, 0.0]},
-                           {1: [0.0, 0.0, 0.0, 0.0],
-                            2: [0.0, 0.0, 0.0, 0.0]}
+    ref_bond_coeffs = [
+         {1: [130.0, 1.526, ' 1  SCP-SCS 6-2'],
+          2: [130.0, 1.526, ' 2  SCS-SCS 2-2']},
+         {1: [350.0, 1.305, ' 1  CHK-COK 47-110'],
+          2: [170.0, 1.08, ' 2  CHK-HCK 46-47'],
+          3: [350.0, 1.171, ' 3  COK-OCK 4-110']},
+         {1: [274.5, 1.34, ' 1  COO-COO 47-47'],
+          2: [170.0, 1.08, ' 2  COO-HCO 46-47'],
+          3: [225.0, 1.37, ' 3  COO-OCO 20-47']},
+         {1: [575.0, 1.21, ' 1  CHE-COE 19-19'],
+          2: [210.0, 1.08, ' 2  CHE-HCE 19-46'],
+          3: [275.0, 0.137, ' 3  COE-OHE 5-19 5-47'],
+          4: [276.5, 0.945, ' 4  HOE-OHE 5-7']}
+                       ]
+
+    ref_angle_coeffs = [
+        {1: [31.5, 112.4,
+             ' 1  SCP-SCS-SCS 6-2-2'],
+         2: [31.5, 112.4,
+             ' 2  SCS-SCS-SCS 2-2-2']},
+        {1: [80.0, 180.0,
+             ' 1  CHK-COK-OCK 4-110-47'],
+         2: [17.5, 117.0,
+             ' 2  COK-CHK-HCK 46-47-46'],
+         3: [17.5, 117.0,
+             ' 3  HCK-CHK-HCK 46-47-46']},
+        {1: [17.5, 120.0,
+             ' 1  COO-COO-HCO 46-47-47'],
+         2: [35.0, 123.0,
+             ' 2  COO-COO-OCO 20-47-47'],
+         3: [37.5, 60.0,
+             ' 3  COO-OCO-COO 47-20-47 modified to smaller angle'],
+         4: [17.5, 114.5,
+             ' 4  HCO-COO-OCO 20-47-46']},
+        {1: [75.0, 180.0,
+             ' 1  CHE-COE-OHE 5-19-19 13-19-19'],
+         2: [56.0, 180.0,
+             ' 2  COE-CHE-HCE 19-19-46'],
+         3: [17.5, 109.0,
+             ' 3  COE-OHE-HOE 7-5-19 7-5-47']}
+                        ]
+
+    ref_dihedral_coeffs = [
+        {1: [-3.4, 1.25, 3.1, 0.0,
+             ' 1  SCP-SCS-SCS-SCS 6-2-2-2'],
+         2: [-3.4, 1.25, 3.1, 0.0,
+             ' 2  SCS-SCS-SCS-SCS 2-2-2-2']},
+        {1: [0.0, 0.0, 0.0, 0.0,
+             ' 1  HCK-CHK-COK-OCK 46-47-110-4']},
+        {1: [-3.5, 3.0, 0.0, 0.0,
+             ' 1  COO-COO-OCO-COO 47-20-47-47 13-20-47-47'],
+         2: [0.0, 14.0, 0.0, 0.0,
+             ' 2  HCO-COO-COO-HCO 46-47-47-46'],
+         3: [0.0, 14.0, 0.0, 0.0,
+             ' 3  HCO-COO-COO-OCO 20-47-47-46'],
+         4: [0.0, 0.0, 0.76, 0.0,
+             ' 4  HCO-COO-OCO-COO 47-20-47-46 13-20-47-36'],
+         5: [0.0, 14.0, 0.0, 0.0,
+             ' 5  OCO-COO-COO-OCO 20-47-47-20 0-47-47-0']},
+        {1: [0.0, 0.0, 0.0, 0.0,
+             ' 1  CHE-COE-OHE-HOE 7-5-19-19 0-19-19-0'],
+         2: [0.0, 0.0, 0.0, 0.0,
+             ' 2  HCE-CHE-COE-OHE 5-19-19-46 0-19-19-0']}
+                           ]
+
+    ref_improper_coeffs = [
+        {},
+        {1: [15.0, 180.0, ' 1  COK-HCK-CHK-HCK 110-46-47-46']},
+        {1: [15.0, 180.0, ' 1  COO-HCO-COO-OCO 47-46-47-20']},
+        {}
                            ]
 
     @pytest.mark.parametrize("datafile, types",
@@ -143,7 +176,8 @@ class TestAtomData:
                              paircoeffs, \
                              bondcoeffs, \
                              anglecoeffs, \
-                             dihedralcoeffs",
+                             dihedralcoeffs, \
+                             impropercoeffs",
                              zipRefs(ref_data_files(),
                                      ref_atom_data,
                                      ref_masses,
@@ -151,7 +185,8 @@ class TestAtomData:
                                      ref_pair_coeffs,
                                      ref_bond_coeffs,
                                      ref_angle_coeffs,
-                                     ref_dihedral_coeffs))
+                                     ref_dihedral_coeffs,
+                                     ref_improper_coeffs))
     def test_getAllAtomData(self,
                             datafile,
                             atomdata,
@@ -160,7 +195,8 @@ class TestAtomData:
                             paircoeffs,
                             bondcoeffs,
                             anglecoeffs,
-                            dihedralcoeffs):
+                            dihedralcoeffs,
+                            impropercoeffs):
         assert atoms.getAllAtomData(datafile)[0][1] == atomdata
         assert atoms.getAllAtomData(datafile)[5] == masses
         assert atoms.getAllAtomData(datafile)[6] == boxsizes
@@ -168,3 +204,4 @@ class TestAtomData:
         assert atoms.getAllAtomData(datafile)[9] == bondcoeffs
         assert atoms.getAllAtomData(datafile)[10] == anglecoeffs
         assert atoms.getAllAtomData(datafile)[11] == dihedralcoeffs
+        assert atoms.getAllAtomData(datafile)[12] == impropercoeffs
