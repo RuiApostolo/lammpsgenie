@@ -3,16 +3,16 @@ import lmptools.commondata_p3 as cdp3
 import lmptools.atoms as atoms
 
 
-def test_getTSrange_fromDummy(dummy_dump):
-    assert cdp3.getTSrange(dummy_dump) == [1000000, 2000000]
+def test_getDumpTSRange_fromDummy(dummy_dump):
+    assert cdp3.getDumpTSRange(dummy_dump) == [1000000, 2000000]
 
 
 @pytest.mark.parametrize(
     "timesteps", [
      [10000, 20000, 30000, 40000, 50000, 60000]
      ])
-def test_getTSrange_fromFile(dumpfilelines, timesteps):
-    assert cdp3.getTSrange(dumpfilelines) == timesteps
+def test_getDumpTSRange_fromFile(dumpfilelines, timesteps):
+    assert cdp3.getDumpTSRange(dumpfilelines) == timesteps
 
 
 @pytest.mark.parametrize(
@@ -106,10 +106,36 @@ def test_readTS_fromFile(dumpfilelines,
                        atoms.getAtomType("tests/uadodecane.data"),
                        9
                        )
-    frame = cdp3.getTSrange(dumpfilelines)[framenumber-1]
+    frame = cdp3.getDumpTSRange(dumpfilelines)[framenumber-1]
     assert len(traj.keys()) == 1
     assert len(traj[frame]['atom'].keys()) == 2400
     assert traj[frame]['boxsize'] == boxsize
     assert traj[frame]['atom'][atomnumber] == properties
 
-# TODO: getTS
+
+@pytest.mark.parametrize(
+    "first, last, numberframes", [
+        ('first', 'last', 6),
+        ('first', 1, 1),
+        ('first', 3, 3),
+        (4, 'last', 3),
+        (6, 'last', 1),
+        (2, 2, 1),
+        (3, 2, 0),
+    ])
+def test_getTrajTSRange(dumpfilelines,
+                        first,
+                        last,
+                        numberframes):
+    traj = {}
+    ifirst = 1 if first == 'first' else first
+    ilast = 6 if last == 'last' else last
+    for frame in range(ifirst, ilast + 1):
+        traj[frame] = cdp3.readTS(
+                          dumpfilelines,
+                          frame,
+                          atoms.getAtomType("tests/uadodecane.data"),
+                          9
+                          )
+    slice_traj = cdp3.getTrajTSRange(traj, first, last)
+    assert len(slice_traj) == numberframes

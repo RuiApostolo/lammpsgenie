@@ -271,7 +271,6 @@ def getAtomData(fn, atomnames):
 
 
 
-# Not done from here down:
 
 
 ##########################################################
@@ -532,6 +531,11 @@ def getAllAtomData(fn, atomnames):
                     #print atomnames
 
     return atomdata, bonddata, angledata, dhdata, impdata, mass, boxsize, numdata, pair, bond, angle, dh, imp
+
+
+
+# Not done from here down:
+
 
 ###########################################################
 ###########################################################

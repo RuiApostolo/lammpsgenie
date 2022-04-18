@@ -113,7 +113,8 @@ def getAtomData(filename):
 
 
 # TODO sort out print commands
-def getAllAtomData(filename):
+# TODO docstring
+def getAllAtomData(filename): #noqa C901
     lines = rdfl.readAll(filename)
     atomnames = getAtomType(filename)
 

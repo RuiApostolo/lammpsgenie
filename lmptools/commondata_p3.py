@@ -1,12 +1,12 @@
 ########
 # module containing commonly used data reading and analysis tools
-# Created by Michael Doig
-# ported to python3 by Rui Apóstolo
-# import command - to be pasted in program code
+# Author: Rui Apóstolo
+# email: ruiapostolo@gmail.com
+# Inspired by previous work by Michael Doig
 from .atoms import getNatoms
 
 
-def getTSrange(lines):
+def getDumpTSRange(lines):
     """
     Reads dump file to get list of timestep numbers.
 
@@ -96,7 +96,7 @@ def readTS(lines, tsnum, atomnames, header=9):
     return traj
 
 
-def getTS(traj, ts1, ts2):
+def getTrajTSRange(traj, ts1, ts2):
     """
     Select a partial timestep range from a trajectory.
 
@@ -121,13 +121,13 @@ def getTS(traj, ts1, ts2):
     """
 
     # TODO: remove sorted and test if still functional
-    if ts1 == 'first':
-        ts1 = sorted(traj.keys())[0]
-    if ts2 == 'last':
-        ts2 = sorted(traj.keys())[-1]
     sortedts = sorted(traj.keys())
+    if ts1 == 'first':
+        ts1 = sortedts[0]
+    if ts2 == 'last':
+        ts2 = sortedts[-1]
     tsrange = []
     for timestep in sortedts:
-        if int(ts1) <= int(timestep) <= int(ts2):
+        if ts1 <= timestep <= ts2:
             tsrange.append(timestep)
     return tsrange
