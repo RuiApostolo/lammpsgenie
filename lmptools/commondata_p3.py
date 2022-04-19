@@ -53,7 +53,8 @@ def readTS(lines, tsnum, atomnames, header=9):
     Returns
     -------
     traj : dict
-    TODO: traj description
+        A trajectory dict with more than one trajectory. Keys are the
+        timestep labels.
     TODO: remove `ts`?
     """
 
@@ -116,18 +117,15 @@ def getTrajTSRange(traj, ts1, ts2):
 
     Returns
     -------
-    tsrange : list
+    tsrange : list of ints
         List of timestep labels.
     """
 
-    # TODO: remove sorted and test if still functional
     sortedts = sorted(traj.keys())
-    if ts1 == 'first':
-        ts1 = sortedts[0]
-    if ts2 == 'last':
-        ts2 = sortedts[-1]
-    tsrange = []
-    for timestep in sortedts:
-        if ts1 <= timestep <= ts2:
-            tsrange.append(timestep)
-    return tsrange
+    try:
+        ts1 = 0 if ts1 == 'first' else sortedts.index(ts1)
+        ts2 = 0 if ts2 == 'last' else sortedts.index(ts2)
+        tsrange = sortedts[ts1:None]
+        return tsrange
+    except(ValueError):
+        return []

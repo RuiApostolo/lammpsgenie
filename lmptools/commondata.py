@@ -532,6 +532,24 @@ def getAllAtomData(fn, atomnames):
 
     return atomdata, bonddata, angledata, dhdata, impdata, mass, boxsize, numdata, pair, bond, angle, dh, imp
 
+#########################################################
+"""
+getAt
+last modified: 13/03/14
+"""
+def getAt(traj, atomdata, at1, at2):
+    if at1 == 'first':
+        at1  = sorted(atomdata.keys())[0]
+    if at2 == 'last':
+        at2 = sorted(atomdata.keys())[len(atomdata)-1]
+    sortedatomnum = sorted(atomdata.keys())
+    atrange = []
+    for i,x in enumerate(sortedatomnum):
+        if int(x) >= int(at1):
+            if int(x) <= int(at2):
+                atrange.append(x)
+    return atrange
+#######################################################
 
 
 # Not done from here down:
@@ -790,24 +808,6 @@ def readpreFFData(fn):
 
 
 
-#########################################################
-"""
-getAt
-last modified: 13/03/14
-"""
-def getAt(traj, atomdata, at1, at2):
-    if at1 == 'first':
-        at1  = sorted(atomdata.keys())[0]
-    if at2 == 'last':
-        at2 = sorted(atomdata.keys())[len(atomdata)-1]
-    sortedatomnum = sorted(atomdata.keys())
-    atrange = []
-    for i,x in enumerate(sortedatomnum):
-        if int(x) >= int(at1):
-            if int(x) <= int(at2):
-                atrange.append(x)
-    return atrange
-#######################################################
 
 """
 getMol
