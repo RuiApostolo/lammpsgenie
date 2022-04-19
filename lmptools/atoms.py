@@ -424,3 +424,37 @@ def _getBADI(lines, line_idx, number):
     for line in range(1, int(number) + 1):
         result[line] = _getParams(lines[line_idx + 1 + line], int)
     return result
+
+
+def getAtomRange(atomdata, atom1, atom2):
+    """
+    Returns list of atom ids between atom1 and atom2, inclusive.
+
+    Parameters
+    ----------
+    atomdata : dict
+        Each entry of the dictionary takes the form:
+        atomid (int): {'mol': int,
+                       'type': str,
+                       'charge': float,
+                       'x': float,
+                       'y': float,
+                       'z': float}
+    atom1 : int
+        Index of first atom to select.
+    atom2 : int
+        Index of last atom to select.
+
+    Returns
+    -------
+    atomrange : list of ints
+        Returns list of atom ids.
+    """
+    sortedatomnum = sorted(atomdata.keys())
+    try:
+        atom1 = 0 if atom1 == 'first' else sortedatomnum.index(atom1)
+        atom2 = 0 if atom2 == 'last' else sortedatomnum.index(atom2)
+        atrange = sortedatomnum[atom1:None]
+        return atrange
+    except(ValueError):
+        return []
