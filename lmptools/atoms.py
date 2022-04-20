@@ -118,96 +118,72 @@ def getAllAtomData(filename): #noqa C901
     lines = rdfl.readAll(filename)
     atomnames = getAtomType(filename)
 
-    bonddata = {}
-    angledata = {}
-    dhdata = {}
-    impdata = {}
     boxsize = {}
-    pair = {}
-    bond = {}
-    angle = {}
-    dihedral = {}
-    imp = {}
 
     numdata = {}
     limits = ['xlo xhi', 'ylo yhi', 'zlo zhi']
+    properties = {
+        'atoms': 0,
+        'bonds': 0,
+        'angles': 0,
+        'dihedrals': 0,
+        'impropers': 0,
+        'atom types': 0,
+        'bond types': 0,
+        'angle types': 0,
+        'dihedral types': 0,
+        'improper types': 0
+    }
+    coeffs = {'Pair Coeffs': ['atom types', {}],
+              'Bond Coeffs': ['bond types', {}],
+              'Angle Coeffs': ['angle types', {}],
+              'Dihedral Coeffs': ['dihedral types', {}],
+              'Improper Coeffs': ['improper types', {}]
+              }
+    badis = {'Bonds': {},
+             'Angles': {},
+             'Dihedrals': {},
+             'Impropers': {}
+             }
 
     for line_idx, line in enumerate(lines):
-        if "atoms" in line:
-            natoms = _getFirst(line, "atoms")
-            numdata['natoms'] = natoms
-        elif "bonds" in line:
-            nbonds = _getFirst(line, "bonds")
-            numdata['nbonds'] = nbonds
-        elif "angles" in line:
-            nangles = _getFirst(line, "angles")
-            numdata['nangles'] = nangles
-        elif "dihedrals" in line:
-            ndh = _getFirst(line, "dihedrals")
-            numdata['ndh'] = ndh
-        elif "impropers" in line:
-            nimp = _getFirst(line, "impropers")
-            numdata['nimp'] = nimp
-        elif "atom types" in line:
-            natomtypes = _getFirst(line, "atom types")
-            numdata['natomtypes'] = natomtypes
-            print("natomtypes "+str(natomtypes))
-        elif "bond types" in line:
-            nbondtypes = _getFirst(line, "bond")
-            numdata['nbondtypes'] = nbondtypes
-            print("nbondtypes "+str(nbondtypes))
-        elif "angle types" in line:
-            nangletypes = _getFirst(line, "angle")
-            numdata['nangletypes'] = nangletypes
-            print("nangletypes "+str(nangletypes))
-        elif "dihedral types" in line:
-            ndihedraltypes = _getFirst(line, "dihedral")
-            numdata['ndihedraltypes'] = ndihedraltypes
-            print("ndihedraltypes "+str(ndihedraltypes))
-        elif "improper types" in line:
-            nimptypes = _getFirst(line, "improper")
-            numdata['nimptypes'] = nimptypes
-            print("nimptypes "+str(nimptypes))
+        if any(propert in line for propert in properties):
+            for propert in properties:
+                if propert in line:
+                    properties[propert] = _getFirst(line, propert)
 
         elif any(limit in line for limit in limits):
             low, high = line.split()[2:4]
             boxsize[low], boxsize[high] = map(float, line.split()[0:2])
 
-        # TODO: try something like above for coeffs
-        #  elif any(coeff in line for coeff in coeff_list):
-
-        elif "Pair Coeffs" in line:
-            pair = _getCoeffs(lines, line_idx, natomtypes)
-
-        elif "Bond Coeffs" in line:
-            bond = _getCoeffs(lines, line_idx, nbondtypes)
-
-        elif "Angle Coeffs" in line:
-            angle = _getCoeffs(lines, line_idx, nangletypes)
-
-        elif "Dihedral Coeffs" in line:
-            dihedral = _getCoeffs(lines, line_idx, ndihedraltypes)
-
-        elif "Improper Coeffs" in line:
-            imp = _getCoeffs(lines, line_idx, nimptypes)
+        elif any(coeff in line for coeff in coeffs):
+            for coeff in coeffs:
+                if coeff in line:
+                    coeffs[coeff][1] = _getCoeffs(lines,
+                                                  line_idx,
+                                                  properties[coeffs[coeff][0]])
 
         elif "Masses" in line:
-            masses = _getMasses(lines, line_idx, natomtypes, atomnames)
+            masses = _getMasses(lines,
+                                line_idx,
+                                properties['atom types'],
+                                atomnames)
 
         elif "Atoms" in line:
-            atomdata = _getAtoms(lines, line_idx, natoms, atomnames)
+            atomdata = _getAtoms(lines,
+                                 line_idx,
+                                 properties['atoms'],
+                                 atomnames)
 
-        elif "Bonds" in line:
-            bonddata = _getBADI(lines, line_idx, nbonds)
+        elif any(badi in line for badi in badis):
+            for badi in badis:
+                if badi in line:
+                    badis[badi] = _getBADI(lines,
+                                           line_idx,
+                                           properties[badi.lower()])
 
-        elif "Angles" in line:
-            angledata = _getBADI(lines, line_idx, nangles)
-
-        elif "Dihedrals" in line:
-            dhdata = _getBADI(lines, line_idx, ndh)
-
-        elif "Impropers" in line:
-            impdata = _getBADI(lines, line_idx, nimp)
+    pair, bond, angle, dihedral, imp = [coeffs[coeff][1] for coeff in coeffs]
+    bonddata, angledata, dhdata, impdata = [badis[badi] for badi in badis]
 
     return atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, \
         numdata, pair, bond, angle, dihedral, imp
@@ -424,37 +400,3 @@ def _getBADI(lines, line_idx, number):
     for line in range(1, int(number) + 1):
         result[line] = _getParams(lines[line_idx + 1 + line], int)
     return result
-
-
-def getAtomRange(atomdata, atom1, atom2):
-    """
-    Returns list of atom ids between atom1 and atom2, inclusive.
-
-    Parameters
-    ----------
-    atomdata : dict
-        Each entry of the dictionary takes the form:
-        atomid (int): {'mol': int,
-                       'type': str,
-                       'charge': float,
-                       'x': float,
-                       'y': float,
-                       'z': float}
-    atom1 : int
-        Index of first atom to select.
-    atom2 : int
-        Index of last atom to select.
-
-    Returns
-    -------
-    atomrange : list of ints
-        Returns list of atom ids.
-    """
-    sortedatomnum = sorted(atomdata.keys())
-    try:
-        atom1 = 0 if atom1 == 'first' else sortedatomnum.index(atom1)
-        atom2 = 0 if atom2 == 'last' else sortedatomnum.index(atom2)
-        atrange = sortedatomnum[atom1:None]
-        return atrange
-    except(ValueError):
-        return []
