@@ -34,7 +34,8 @@ def ref_data_files():
     datafiles = (
         "ketene.lammps",
         "oxirene.lammps",
-        "ethynol.lammps"
+        "ethynol.lammps",
+        "oxirene_bare.lammps"
                  )
     return _add_testd(datafiles)
 
