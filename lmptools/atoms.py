@@ -101,7 +101,7 @@ def getAtomData(filename):
 
         elif "atom types" in line:
             natomtypes = _getFirst(line, "atom types")
-            print("ntypes ", natomtypes)
+            #  print("ntypes ", natomtypes)
 
         elif "Masses" in line:
             masses = _getMasses(lines, line_idx, natomtypes, atomnames)
@@ -112,7 +112,6 @@ def getAtomData(filename):
     return atomdata, masses
 
 
-# TODO sort out print commands
 # TODO docstring
 def getAllAtomData(filename): #noqa C901
     lines = rdfl.readAll(filename)
@@ -223,6 +222,38 @@ def getAtomRange(atomdata, atom1, atom2):
         return []
 
 
+def getAtomsByType(atomdata, *types):
+    """
+    Returns list of atom ids that correspond to `types`.
+
+    Parameters
+    ----------
+    atomdata : dict
+        Each entry of the dictionary takes the form:
+        atomid (int): {'mol': int,
+                       'type': str,
+                       'charge': float,
+                       'x': float,
+                       'y': float,
+                       'z': float}
+    *types: str
+        Atom types in string form.
+
+    Returns
+    -------
+    atomrange : list of ints
+        Returns list of atom ids.
+    """
+
+    atomrange = []
+    sortedatomnum = sorted(atomdata.keys())
+    for typ in types:
+        for atom in sortedatomnum:
+            if atomdata[atom]['type'] == typ:
+                atomrange.append(atom)
+    return atomrange
+
+
 ###############################################################################
 #                             Protected Functions                             #
 ###############################################################################
@@ -321,6 +352,7 @@ def _getAtoms(lines, line_idx, natoms, atomnames):
                 atomdata[atomid][column] = \
                     float(el[columns.index(column) + 1])
             # print(atomnames)
+        # replace type from int to str
         atomdata[atomid]['type'] = \
             atomnames[int(atomdata[atomid]['type'])]
     return atomdata
