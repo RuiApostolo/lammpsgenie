@@ -24,7 +24,7 @@ class TestAtomDataLarge:
         # ethynol
         {1: 'CHE', 2: 'COE', 3: 'HCE', 4: 'HOE', 5: 'OHE'},
         # oxirene_bare
-        {1: 'COO', 2: 'HCO', 3: 'OCO'},
+        {1: '1', 2: '2', 3: '3'},
                       ]
 
     ref_atom_data = [
@@ -58,7 +58,7 @@ class TestAtomDataLarge:
          'z': 0.09623},
         # oxirene_bare
         {'mol': 1,
-         'type': 'COO',
+         'type': '1',
          'charge': 0.135,
          'x': 1.00761,
          'y': -0.2128,
@@ -76,7 +76,7 @@ class TestAtomDataLarge:
         {'CHE': 12.011, 'COE': 12.011, 'HCE': 1.008,
          'HOE': 1.008, 'OHE': 15.999},
         # oxirene_bare
-        {'COO': 12.011, 'HCO': 1.008, 'OCO': 15.999},
+        {'1': 12.011, '2': 1.008, '3': 15.999},
                   ]
 
     ref_boxsizes = [
@@ -122,9 +122,9 @@ class TestAtomDataLarge:
          4: [0.0, 0.0, ' 4  HOE 97/7'],
          5: [0.17, 3.12, ' 5  OHE 96/5']},
         # oxirene_bare
-        {1: [' 1  COO 87/47'],
-         2: [' 2  HCO 89/46'],
-         3: [' 3  OCO 122/20']},
+        {1: [' 1'],
+         2: [' 2'],
+         3: ['']},
                         ]
 
     ref_bond_coeffs = [
@@ -237,6 +237,9 @@ class TestAtomDataLarge:
                                      ref_atom_types))
     def test_getAtomType(self, datafile, types):
         assert atoms.getAtomType(datafile) == types
+
+    def test_getAtomTypeEmpty(self):
+        assert atoms.getAtomType("tests/dump.uadodecane.lammpstrj") == {}
 
     @pytest.mark.parametrize("datafile, atomdata, masses",
                              zipRefs(ref_data_files_large(),
