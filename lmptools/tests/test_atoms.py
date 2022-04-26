@@ -421,6 +421,19 @@ class TestRanges:
         [5, 1, 3, 3, 1, 1, 0, 0],
         ]
 
+    ref_AtomTypes = [
+        # ua_dodecane
+        [2400, 400],
+        # ketene
+        [0, 0],
+        # oxirene
+        [0, 0],
+        # ethynol
+        [0, 0],
+        # oxirene_bare
+        [0, 0],
+    ]
+
     @pytest.mark.parametrize("datafile, result",
                              zipRefs(ref_data_files_large(), ref_AtomRanges))
     @pytest.mark.parametrize(
@@ -437,3 +450,15 @@ class TestRanges:
     def test_getAtomRange(self, datafile, result, idx, start, stop):
         atomdata = atoms.getAllAtomData(datafile)[0]
         assert len(atoms.getAtomRange(atomdata, start, stop)) == result[idx]
+
+    # TODO: could use some more test cases
+    @pytest.mark.parametrize("datafile, result",
+                             zipRefs(ref_data_files_large(), ref_AtomTypes))
+    @pytest.mark.parametrize(
+        "idx, types", [
+            (0, ['SCS', 'SCP']),
+            (1, ['SCP']),
+        ])
+    def test_AtomsByType(self, datafile, result, idx, types):
+        atomdata = atoms.getAllAtomData(datafile)[0]
+        assert len(atoms.getAtomsByType(atomdata, *types)) == result[idx]

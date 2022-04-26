@@ -251,8 +251,8 @@ def getAtomsByType(atomdata, *types):
 
     atomrange = []
     sortedatomnum = sorted(atomdata.keys())
-    for typ in types:
-        for atom in sortedatomnum:
+    for atom in sortedatomnum:
+        for typ in types:
             if atomdata[atom]['type'] == typ:
                 atomrange.append(atom)
     return atomrange
