@@ -124,8 +124,11 @@ def getTrajTSRange(traj, ts1, ts2):
     sortedts = sorted(traj.keys())
     try:
         ts1 = 0 if ts1 == 'first' else sortedts.index(ts1)
-        ts2 = 0 if ts2 == 'last' else sortedts.index(ts2)
-        tsrange = sortedts[ts1:None]
+        ts2 = None if ts2 == 'last' else sortedts.index(ts2)
+        if ts2 is None:
+            tsrange = sortedts[ts1:None]
+        else:
+            tsrange = sortedts[ts1:ts2 + 1]
         return tsrange
     except(ValueError):
         return []

@@ -114,7 +114,7 @@ def test_readTS_fromFile(dumpfilelines,
 
 
 @pytest.mark.parametrize(
-    "first, last, numberframes", [
+    "start, stop, numberframes", [
         ('first', 'last', 6),
         ('first', 1, 1),
         ('first', 3, 3),
@@ -122,20 +122,19 @@ def test_readTS_fromFile(dumpfilelines,
         (6, 'last', 1),
         (2, 2, 1),
         (3, 2, 0),
+        (10, 2, 0),
     ])
 def test_getTrajTSRange(dumpfilelines,
-                        first,
-                        last,
+                        start,
+                        stop,
                         numberframes):
     traj = {}
-    ifirst = 1 if first == 'first' else first
-    ilast = 6 if last == 'last' else last
-    for frame in range(ifirst, ilast + 1):
+    for frame in range(1, 6 + 1):
         traj[frame] = cdp3.readTS(
                           dumpfilelines,
                           frame,
                           atoms.getAtomType("tests/uadodecane.data"),
                           9
                           )
-    slice_traj = cdp3.getTrajTSRange(traj, first, last)
+    slice_traj = cdp3.getTrajTSRange(traj, start, stop)
     assert len(slice_traj) == numberframes

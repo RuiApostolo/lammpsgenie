@@ -215,8 +215,11 @@ def getAtomRange(atomdata, atom1, atom2):
     sortedatomnum = sorted(atomdata.keys())
     try:
         atom1 = 0 if atom1 == 'first' else sortedatomnum.index(atom1)
-        atom2 = 0 if atom2 == 'last' else sortedatomnum.index(atom2)
-        atrange = sortedatomnum[atom1:None]
+        atom2 = None if atom2 == 'last' else sortedatomnum.index(atom2)
+        if atom2 is None:
+            atrange = sortedatomnum[atom1:None]
+        else:
+            atrange = sortedatomnum[atom1:atom2 + 1]
         return atrange
     except(ValueError):
         return []
@@ -229,6 +232,7 @@ def getAtomsByType(atomdata, *types):
     Parameters
     ----------
     atomdata : dict
+
         Each entry of the dictionary takes the form:
         atomid (int): {'mol': int,
                        'type': str,
