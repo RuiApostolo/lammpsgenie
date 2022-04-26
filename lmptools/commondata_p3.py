@@ -53,9 +53,8 @@ def readTS(lines, tsnum, atomnames, header=9):
     Returns
     -------
     traj : dict
-        A trajectory dict with more than one trajectory. Keys are the
+        A trajectory dict with more than one timestep. Keys are the
         timestep labels.
-    TODO: remove `ts`?
     """
 
     traj = {}
@@ -104,7 +103,7 @@ def getTrajTSRange(traj, ts1, ts2):
     Parameters
     ----------
     traj : dict
-        A trajectory dict with more than one trajectory. Keys are the
+        A trajectory dict with more than one timestep. Keys are the
         timestep labels.
     ts1 : int or 'first'
         The timestep label for the start of the range.

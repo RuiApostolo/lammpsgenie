@@ -803,7 +803,6 @@ def readpreFFData(fn):
 ##########################################################
 ##########################################################
 
-# Not done from here down:
 
 """
 getMol
@@ -837,6 +836,7 @@ def getTotMass(traj, masses, natoms, tsrange):
 
 
 ################################################################
+# Not done from here down:
 
 """
 getCOMTS

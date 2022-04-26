@@ -465,3 +465,17 @@ class TestRanges:
     def test_AtomsByType(self, datafile, result, idx, types):
         atomdata = atoms.getAllAtomData(datafile)[0]
         assert len(atoms.getAtomsByType(atomdata, *types)) == result[idx]
+
+
+@pytest.mark.parametrize(
+    "datafile, result", [
+        ("tests/uadodecane.data", 34068),
+    ])
+def test_getTotalMass(dumpfilelines, datafile, result):
+    traj = cdp3.readTS(dumpfilelines,
+                       1,
+                       atoms.getAtomType(datafile),
+                       9
+                       )
+    masses = atoms.getAtomData(datafile)[1]
+    assert atoms.getTotalMass(traj, masses) == pytest.approx(result)

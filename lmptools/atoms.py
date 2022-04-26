@@ -61,17 +61,12 @@ def getAtomType(filename):
             for i in range(1, natomtypes + 1):
                 matches = re.match(p, lines[lineindex + i + 1].split("#")[1])
                 try:
-                    print('try')
                     if matches.group('name') != '':
                         atomnames[i] = matches.group('name')
                     else:
                         atomnames[i] = str(i)
-                    print(atomnames)
                 except(AttributeError):
-                    print('except')
                     atomnames[i] = str(i)
-                    print(atomnames)
-            print(atomnames)
             return atomnames
     return {}
 
@@ -265,6 +260,35 @@ def getAtomsByType(atomdata, *types):
             if atomdata[atom]['type'] == typ:
                 atomrange.append(atom)
     return atomrange
+
+
+def getTotalMass(traj, masses):
+    """
+    Returns total mass of atoms in first timestep of the provided
+    trajectory.
+
+    Parameters
+    ----------
+    traj : dict
+        A trajectory dict with more than one timestep. Keys are the
+        timestep labels.
+
+    masses : dict
+        The atomic masses. Each entry takes the form:
+        type (str): mass (float)
+
+    Returns
+    -------
+    totalmass : float
+        The sum of masses of all atoms in the timestep.
+    """
+
+    frame = sorted(traj.keys())[0]
+    totalmass = 0.0
+    # for key in dict:
+    for atom in traj[frame]["atom"]:
+        totalmass += masses[traj[frame]["atom"][atom]['type']]
+    return totalmass
 
 
 ###############################################################################
