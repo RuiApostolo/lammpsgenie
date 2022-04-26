@@ -3,6 +3,11 @@ import lmptools.readfiles as rdfl
 
 
 @pytest.fixture
+def emptylist():
+    return []
+
+
+@pytest.fixture
 def dummy_dump():
     return [
          "ITEM: TIMESTEP",

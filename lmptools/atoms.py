@@ -25,6 +25,7 @@ def getNatoms(lines):
         if lines[i].startswith("ITEM: NUMBER OF ATOMS"):
             natoms = int(lines[i+1])
             return natoms
+    return None
 
 
 def getAtomType(filename):

@@ -4,13 +4,13 @@ import lmptools.atoms as atoms
 import lmptools.commondata_p3 as cdp3
 
 
-def test_getNatoms_fromDummy(dummy_dump):
-    assert cdp3.getNatoms(dummy_dump) == 16889
-
-
-@pytest.mark.parametrize("natoms", [2400])
-def test_getNatoms_fromFile(dumpfilelines, natoms):
-    assert cdp3.getNatoms(dumpfilelines) == natoms
+@pytest.mark.parametrize("dumpfile, natoms", [
+    ('dummy_dump', 16889),
+    ('dumpfilelines', 2400),
+    ('emptylist', None),
+    ])
+def test_getNatoms_fromDummy(dumpfile, natoms, request):
+    assert cdp3.getNatoms(request.getfixturevalue(dumpfile)) == natoms
 
 
 class TestAtomDataLarge:
