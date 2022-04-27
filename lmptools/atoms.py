@@ -291,6 +291,42 @@ def getTotalMass(traj, masses):
     return totalmass
 
 
+def getCOM(traj, tsrange, atomlist, masses):
+    """
+    Returns centre of mass position for atom range in timestep range.
+
+    Parameters
+    ----------
+    traj : dict
+        A trajectory dict with more than one timestep. Keys are the
+        timestep labels.
+    tsrange : list of int
+        List of timestep numbers.
+    atomlist : list of ints
+        List of atom ids.
+    masses : dict
+        The atomic masses. Each entry takes the form:
+        type (str): mass (float)
+
+    Returns
+    -------
+    com : dict
+        timestep label (int) : (x, y, z) (tuple of floats)
+    """
+
+    com = {}
+    totalmass = getTotalMass(traj, masses)
+    for ts in tsrange:
+        xt, yt, zt = 0.0, 0.0, 0.0
+        for atom in [a for a in traj[ts]["atom"].keys() if a in atomlist]:
+            mass = masses[traj[ts]["atom"][atom]['type']]
+            xt += traj[ts]["atom"][atom]['x'] * mass
+            yt += traj[ts]["atom"][atom]['y'] * mass
+            zt += traj[ts]["atom"][atom]['z'] * mass
+        com[ts] = (xt/totalmass, yt/totalmass, zt/totalmass)
+    return com
+
+
 ###############################################################################
 #                             Protected Functions                             #
 ###############################################################################
@@ -316,7 +352,7 @@ def _getFirst(line, word):
 
 def _getMasses(lines, line_idx, natomtypes, atomnames):
     """
-    Returns split part before 'word'
+    Returns masses for all atoms in lines.
 
     Parameters
     ----------
@@ -445,7 +481,6 @@ def _getCoeffs(lines, line_idx, number):
     return result
 
 
-# TODO: get better name
 def _getBADI(lines, line_idx, number):
     """
     Returns dictionary with atom numbers for the bond/angle/dihedral/improper.

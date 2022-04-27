@@ -201,3 +201,22 @@ Structure with custom types: `HCE-CHE#COE-OHE-HOE`
 1 0.0 0.0 0.0 0.0 # 1  CHE-COE-OHE-HOE 7-5-19-19 0-19-19-0
 2 0.0 0.0 0.0 0.0 # 2  HCE-CHE-COE-OHE 5-19-19-46 0-19-19-0
 ```
+
+COM calculation
+===============
+
+## Requirements
+
+These instructions make use of third party tools:
+
+1. VMD: [Download](https://www.ks.uiuc.edu/Development/Download/download.cgi?PackageName=VMD)
+
+## Generating the COM data
+
+Run the command
+
+```
+vmd -dispdev text -e calculate_com.vmd
+```
+
+the results are written to `com.dat`

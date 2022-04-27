@@ -479,3 +479,61 @@ def test_getTotalMass(dumpfilelines, datafile, result):
                        )
     masses = atoms.getAtomData(datafile)[1]
     assert atoms.getTotalMass(traj, masses) == pytest.approx(result)
+
+
+ref_COM = {
+    10000: (pytest.approx(22.561037063598633, 0.0001),
+            pytest.approx(22.403257369995117, 0.0001),
+            pytest.approx(22.366670608520508, 0.0001)),
+    20000: (pytest.approx(22.573179244995117, 0.0001),
+            pytest.approx(22.589023590087890, 0.0001),
+            pytest.approx(22.611749649047850, 0.0001)),
+    30000: (pytest.approx(22.587324142456055, 0.0001),
+            pytest.approx(22.393024444580078, 0.0001),
+            pytest.approx(22.280412673950195, 0.0001)),
+    40000: (pytest.approx(22.489070892333984, 0.0001),
+            pytest.approx(22.478952407836914, 0.0001),
+            pytest.approx(22.401813507080078, 0.0001)),
+    50000: (pytest.approx(22.337173461914063, 0.0001),
+            pytest.approx(22.394508361816406, 0.0001),
+            pytest.approx(22.510154724121094, 0.0001)),
+    60000: (pytest.approx(22.595905303955078, 0.0001),
+            pytest.approx(22.634838104248047, 0.0001),
+            pytest.approx(22.632850646972656, 0.0001)),
+}
+
+ref_tsidrange = list(range(1, 6 + 1, 1))
+
+ref_tsnamerange = list(range(10000, 60000 + 1, 10000))
+
+ref_atomlist = list(range(1, 2400 + 1))
+
+
+@pytest.mark.parametrize(
+    "datafile, tsidrange, tsnamerange, atomlist, result", [
+        ("tests/uadodecane.data",
+         ref_tsidrange,
+         ref_tsnamerange,
+         ref_atomlist,
+         ref_COM),
+    ])
+def test_getCOM(dumpfilelines,
+                datafile,
+                tsidrange,
+                tsnamerange,
+                atomlist,
+                result):
+    traj = {}
+    for idx, frame in enumerate(tsnamerange):
+        traj[frame] = cdp3.readTS(
+                        dumpfilelines,
+                        idx + 1,
+                        atoms.getAtomType("tests/uadodecane.data"),
+                        9
+                        )[frame]
+        #  framename = list(new_traj.keys())[0]
+        #  framename = [*new_traj][0]
+        #  traj[framename] = new_traj[framename]
+    masses = atoms.getAtomData(datafile)[1]
+    com = atoms.getCOM(traj, tsnamerange, atomlist, masses)
+    assert com == ref_COM

@@ -836,7 +836,6 @@ def getTotMass(traj, masses, natoms, tsrange):
 
 
 ################################################################
-# Not done from here down:
 
 """
 getCOMTS
@@ -887,6 +886,7 @@ def getCOMts(lines, masses, natoms, header, atomnames):
     return COM
 #############################################
 
+# Not done from here down:
 """
 readcombmasses
 #########################################
