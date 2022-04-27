@@ -23,5 +23,6 @@ setuptools.setup(
         ],
     package_dir={"": "lmptools"},
     packages=setuptools.find_packages(where="lmptools"),
-    python_requires=">=3.6"
+    python_requires=">=3.6",
+    scripts=['mergefiles'],
 )
