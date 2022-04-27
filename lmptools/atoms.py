@@ -73,7 +73,7 @@ def getAtomType(filename):
 
 def getAtomData(filename):
     """
-    Reads in a data file, returns reduced atom data, and masses.
+    Retrives reduced atom data, and masses, from a LAMMPS data file.
 
     Parameters
     ----------
@@ -118,12 +118,75 @@ def getAtomData(filename):
 
 # TODO docstring
 def getAllAtomData(filename): #noqa C901
+    """
+    Retrieves every piece of atom data from a LAMMPS data file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the datafile to be read.
+
+    Returns
+    -------
+    atomdata : dict
+        Each entry of the dictionary takes the form:
+        atomid (int): {'mol': int,
+                       'type': str,
+                       'charge': float,
+                       'x': float,
+                       'y': float,
+                       'z': float}
+
+    bonddata : dict
+        The bond data. Each entry of the dictionary takes the form:
+        bondid (int) : [bondtype, atom1, atom2] (list of ints)
+
+    angledata : dict
+        The angle data. Each entry of the dictionary takes the form:
+        angleid (int) : [angletype, atom1, atom2, atom3] (list of ints)
+
+    dhdata : dict
+        The dihedral data. Each entry of the dictionary takes the form:
+        dihedralid (int) : [dihedraltype, atom1, atom2, atom3] (list of ints)
+
+    impdata : dict
+        The improper data. Each entry of the dictionary takes the form:
+        improperid (int) : [impropertype, atom1, atom2, atom3] (list of ints)
+
+    masses : dict
+        The atomic masses. Each entry takes the form:
+        type (str): mass (float)
+
+    boxsize : dict
+        The simulaton box size. The dictionary takes the form:
+        coordinate (str) : float
+        where coordinate is can take the values:
+        'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
+        in accordance with LAMMPS data file syntax.
+
+    pair, bond, angle, dihedral, imp : dict
+        The pair, bond, angle, dihedral, and improper coefficients.
+        Each dictionary entry takes the form:
+        property_type (int) : [*coeffs, 'comment'] list of floats + str
+        The number of coefficients can vary depending on the particular
+        property. Pair, bond, angles, and impropers usually have 2, dihedrals
+        usually have 4. The function accepts any number.
+
+    properties : dict
+        A dictionary that contains the number, and number of types of
+        atoms, bonds, angles, dihedrals, and impropers.
+        Each entry takes the form:
+        property (str) : int
+        where property can be one of:
+        'atoms', 'bonds', 'angles', 'dihedrals', 'impropers', 'atom types',
+        'bond types', 'angle types', 'dihedral types', and 'improper types',
+    """
+
     lines = rdfl.readAll(filename)
     atomnames = getAtomType(filename)
 
     boxsize = {}
 
-    numdata = {}
     limits = ['xlo xhi', 'ylo yhi', 'zlo zhi']
     properties = {
         'atoms': 0,
@@ -189,7 +252,7 @@ def getAllAtomData(filename): #noqa C901
     bonddata, angledata, dhdata, impdata = [badis[badi] for badi in badis]
 
     return atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, \
-        numdata, pair, bond, angle, dihedral, imp
+        pair, bond, angle, dihedral, imp, properties
 
 
 def getAtomRange(atomdata, atom1, atom2):

@@ -280,11 +280,11 @@ class TestAtomDataLarge:
         assert atoms.getAllAtomData(datafile)[0][1] == atomdata
         assert atoms.getAllAtomData(datafile)[5] == masses
         assert atoms.getAllAtomData(datafile)[6] == boxsizes
-        assert atoms.getAllAtomData(datafile)[8] == paircoeffs
-        assert atoms.getAllAtomData(datafile)[9] == bondcoeffs
-        assert atoms.getAllAtomData(datafile)[10] == anglecoeffs
-        assert atoms.getAllAtomData(datafile)[11] == dihedralcoeffs
-        assert atoms.getAllAtomData(datafile)[12] == impropercoeffs
+        assert atoms.getAllAtomData(datafile)[7] == paircoeffs
+        assert atoms.getAllAtomData(datafile)[8] == bondcoeffs
+        assert atoms.getAllAtomData(datafile)[9] == anglecoeffs
+        assert atoms.getAllAtomData(datafile)[10] == dihedralcoeffs
+        assert atoms.getAllAtomData(datafile)[11] == impropercoeffs
 
 
 class TestAtomDataSmall:
