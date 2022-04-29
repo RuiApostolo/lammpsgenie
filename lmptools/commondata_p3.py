@@ -45,7 +45,7 @@ def readTS(lines, tsnum, atomnames, header=9):
         Number of the frame to read.
 
     atomnames : dict
-        Dictionary of atom types and names. Use getAtomType().
+        Dictionary of atom types and names. Use atoms.getAtomType().
 
     header : int, default=9
         Number of lines in the dumpfile 'header', from 'ITEM: TIMESTEP' to

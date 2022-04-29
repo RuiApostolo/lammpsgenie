@@ -82,18 +82,19 @@ def getAtomData(filename):
 
     Returns
     -------
-    atomdata : dict
-        Each entry of the dictionary takes the form:
-        atomid (int): {'mol': int,
-                       'type': str,
-                       'charge': float,
-                       'x': float,
-                       'y': float,
-                       'z': float}
+    Topology : dict, comprised of
+        masses : dict
+            The atomic masses. Each entry takes the form:
+            type (str): mass (float)
 
-    masses : dict
-        The atomic masses. Each entry takes the form:
-        type (str): mass (float)
+        atomdata : dict
+            Each entry of the dictionary takes the form:
+            atomid (int): {'mol': int,
+                           'type': str,
+                           'charge': float,
+                           'x': float,
+                           'y': float,
+                           'z': float}
     """
 
     lines = rdfl.readAll(filename)
@@ -113,7 +114,21 @@ def getAtomData(filename):
         elif "Atoms" in line:
             atomdata = _getAtoms(lines, line_idx, natoms, atomnames)
 
-    return atomdata, masses
+    return {
+        'topologycounts': {},
+        'boxsize': {},
+        'pairtypes': {},
+        'bondtypes': {},
+        'angletypes': {},
+        'dihedraltypes': {},
+        'impropertypes': {},
+        'masses': masses,
+        'atomdata': atomdata,
+        'bonddata': {},
+        'angledata': {},
+        'dihedraldata': {},
+        'improperdata': {},
+            }
 
 
 # TODO docstring
@@ -128,58 +143,61 @@ def getAllAtomData(filename): #noqa C901
 
     Returns
     -------
-    atomdata : dict
-        Each entry of the dictionary takes the form:
-        atomid (int): {'mol': int,
-                       'type': str,
-                       'charge': float,
-                       'x': float,
-                       'y': float,
-                       'z': float}
+    topology : dict, comprised of
+        topologycounts : dict
+            A dictionary that contains the number, and number of types of
+            atoms, bonds, angles, dihedrals, and impropers.
+            Each entry takes the form:
+            property (str) : int
+            where property can be one of:
+            'atoms', 'bonds', 'angles', 'dihedrals', 'impropers', 'atom types',
+            'bond types', 'angle types', 'dihedral types' and 'improper types'.
 
-    bonddata : dict
-        The bond data. Each entry of the dictionary takes the form:
-        bondid (int) : [bondtype, atom1, atom2] (list of ints)
+        masses : dict
+            The atomic masses. Each entry takes the form:
+            type (str): mass (float)
 
-    angledata : dict
-        The angle data. Each entry of the dictionary takes the form:
-        angleid (int) : [angletype, atom1, atom2, atom3] (list of ints)
+        boxsize : dict
+            The simulaton box size. The dictionary takes the form:
+            coordinate (str) : float
+            where coordinate is can take the values:
+            'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
+            in accordance with LAMMPS data file syntax.
 
-    dhdata : dict
-        The dihedral data. Each entry of the dictionary takes the form:
-        dihedralid (int) : [dihedraltype, atom1, atom2, atom3] (list of ints)
+        pair, bond, angle, dihedral, imp : dict
+            The pair, bond, angle, dihedral, and improper coefficients.
+            Each dictionary entry takes the form:
+            property_type (int) : [*coeffs, 'comment'] list of floats + str
+            The number of coefficients can vary depending on the particular
+            property. Pair, bond, angles, and impropers usually have 2,
+            dihedrals usually have 4. The function accepts any number.
 
-    impdata : dict
-        The improper data. Each entry of the dictionary takes the form:
-        improperid (int) : [impropertype, atom1, atom2, atom3] (list of ints)
+        atomdata : dict
+            Each entry of the dictionary takes the form:
+            atomid (int): {'mol': int,
+                           'type': str,
+                           'charge': float,
+                           'x': float,
+                           'y': float,
+                           'z': float}
 
-    masses : dict
-        The atomic masses. Each entry takes the form:
-        type (str): mass (float)
+        bonddata : dict
+            The bond data. Each entry of the dictionary takes the form:
+            bondid (int) : [bondtype, atom1, atom2] (list of ints)
 
-    boxsize : dict
-        The simulaton box size. The dictionary takes the form:
-        coordinate (str) : float
-        where coordinate is can take the values:
-        'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
-        in accordance with LAMMPS data file syntax.
+        angledata : dict
+            The angle data. Each entry of the dictionary takes the form:
+            angleid (int) : [angletype, atom1, atom2, atom3] (list of ints)
 
-    pair, bond, angle, dihedral, imp : dict
-        The pair, bond, angle, dihedral, and improper coefficients.
-        Each dictionary entry takes the form:
-        property_type (int) : [*coeffs, 'comment'] list of floats + str
-        The number of coefficients can vary depending on the particular
-        property. Pair, bond, angles, and impropers usually have 2, dihedrals
-        usually have 4. The function accepts any number.
+        dihedraldata : dict
+            The dihedral data. Each entry of the dictionary takes the form:
+            dihedralid (int) : [dihedraltype, atom1, atom2, atom3, atom4]
+                               (list of ints)
 
-    properties : dict
-        A dictionary that contains the number, and number of types of
-        atoms, bonds, angles, dihedrals, and impropers.
-        Each entry takes the form:
-        property (str) : int
-        where property can be one of:
-        'atoms', 'bonds', 'angles', 'dihedrals', 'impropers', 'atom types',
-        'bond types', 'angle types', 'dihedral types', and 'improper types',
+        impdata : dict
+            The improper data. Each entry of the dictionary takes the form:
+            improperid (int) : [impropertype, atom1, atom2, atom3]
+                               (list of ints)
     """
 
     lines = rdfl.readAll(filename)
@@ -188,7 +206,7 @@ def getAllAtomData(filename): #noqa C901
     boxsize = {}
 
     limits = ['xlo xhi', 'ylo yhi', 'zlo zhi']
-    properties = {
+    topologycounts = {
         'atoms': 0,
         'bonds': 0,
         'angles': 0,
@@ -213,10 +231,11 @@ def getAllAtomData(filename): #noqa C901
              }
 
     for line_idx, line in enumerate(lines):
-        if any(propert in line for propert in properties):
-            for propert in properties:
-                if propert in line:
-                    properties[propert] = _getFirst(line, propert)
+        if any(topologycount in line for topologycount in topologycounts):
+            for topologycount in topologycounts:
+                if topologycount in line:
+                    topologycounts[topologycount] = \
+                        _getFirst(line, topologycount)
 
         elif any(limit in line for limit in limits):
             low, high = line.split()[2:4]
@@ -225,20 +244,21 @@ def getAllAtomData(filename): #noqa C901
         elif any(coeff in line for coeff in coeffs):
             for coeff in coeffs:
                 if coeff in line:
-                    coeffs[coeff][1] = _getCoeffs(lines,
-                                                  line_idx,
-                                                  properties[coeffs[coeff][0]])
+                    coeffs[coeff][1] = \
+                        _getCoeffs(lines,
+                                   line_idx,
+                                   topologycounts[coeffs[coeff][0]])
 
         elif "Masses" in line:
             masses = _getMasses(lines,
                                 line_idx,
-                                properties['atom types'],
+                                topologycounts['atom types'],
                                 atomnames)
 
         elif "Atoms" in line:
             atomdata = _getAtoms(lines,
                                  line_idx,
-                                 properties['atoms'],
+                                 topologycounts['atoms'],
                                  atomnames)
 
         elif any(badi in line for badi in badis):
@@ -246,13 +266,28 @@ def getAllAtomData(filename): #noqa C901
                 if badi in line:
                     badis[badi] = _getBADI(lines,
                                            line_idx,
-                                           properties[badi.lower()])
+                                           topologycounts[badi.lower()])
 
-    pair, bond, angle, dihedral, imp = [coeffs[coeff][1] for coeff in coeffs]
-    bonddata, angledata, dhdata, impdata = [badis[badi] for badi in badis]
+    pairtypes, bondtypes, angletypes, dihedraltypes, impropertypes = \
+        [coeffs[coeff][1] for coeff in coeffs]
+    bonddata, angledata, dihedraldata, improperdata = \
+        [badis[badi] for badi in badis]
 
-    return atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, \
-        pair, bond, angle, dihedral, imp, properties
+    return {
+        'topologycounts': topologycounts,
+        'boxsize': boxsize,
+        'pairtypes': pairtypes,
+        'bondtypes': bondtypes,
+        'angletypes': angletypes,
+        'dihedraltypes': dihedraltypes,
+        'impropertypes': impropertypes,
+        'masses': masses,
+        'atomdata': atomdata,
+        'bonddata': bonddata,
+        'angledata': angledata,
+        'dihedraldata': dihedraldata,
+        'improperdata': improperdata,
+            }
 
 
 def getAtomRange(atomdata, atom1, atom2):

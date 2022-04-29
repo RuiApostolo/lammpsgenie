@@ -246,8 +246,9 @@ class TestAtomDataLarge:
                                      ref_atom_data,
                                      ref_masses))
     def test_getAtomData(self, datafile, atomdata, masses):
-        assert atoms.getAtomData(datafile)[0][1] == atomdata
-        assert atoms.getAtomData(datafile)[1] == masses
+        data = atoms.getAtomData(datafile)
+        assert data['atomdata'][1] == atomdata
+        assert data['masses'] == masses
 
     @pytest.mark.parametrize("datafile, \
                              atomdata, \
@@ -277,14 +278,15 @@ class TestAtomDataLarge:
                                  anglecoeffs,
                                  dihedralcoeffs,
                                  impropercoeffs):
-        assert atoms.getAllAtomData(datafile)[0][1] == atomdata
-        assert atoms.getAllAtomData(datafile)[5] == masses
-        assert atoms.getAllAtomData(datafile)[6] == boxsizes
-        assert atoms.getAllAtomData(datafile)[7] == paircoeffs
-        assert atoms.getAllAtomData(datafile)[8] == bondcoeffs
-        assert atoms.getAllAtomData(datafile)[9] == anglecoeffs
-        assert atoms.getAllAtomData(datafile)[10] == dihedralcoeffs
-        assert atoms.getAllAtomData(datafile)[11] == impropercoeffs
+        data = atoms.getAllAtomData(datafile)
+        assert data['atomdata'][1] == atomdata
+        assert data['masses'] == masses
+        assert data['boxsize'] == boxsizes
+        assert data['pairtypes'] == paircoeffs
+        assert data['bondtypes'] == bondcoeffs
+        assert data['angletypes'] == anglecoeffs
+        assert data['dihedraltypes'] == dihedralcoeffs
+        assert data['impropertypes'] == impropercoeffs
 
 
 class TestAtomDataSmall:
@@ -397,10 +399,11 @@ class TestAtomDataSmall:
                              angles,
                              dihedrals,
                              impropers):
-        assert atoms.getAllAtomData(datafile)[1] == bonds
-        assert atoms.getAllAtomData(datafile)[2] == angles
-        assert atoms.getAllAtomData(datafile)[3] == dihedrals
-        assert atoms.getAllAtomData(datafile)[4] == impropers
+        data = atoms.getAllAtomData(datafile)
+        assert data['bonddata'] == bonds
+        assert data['angledata'] == angles
+        assert data['dihedraldata'] == dihedrals
+        assert data['improperdata'] == impropers
 
 
 class TestRanges:
@@ -451,7 +454,7 @@ class TestRanges:
             (7, 3E10, 3),
         ])
     def test_getAtomRange(self, datafile, result, idx, start, stop):
-        atomdata = atoms.getAllAtomData(datafile)[0]
+        atomdata = atoms.getAllAtomData(datafile)['atomdata']
         assert len(atoms.getAtomRange(atomdata, start, stop)) == result[idx]
 
     # TODO: could use some more test cases
@@ -463,7 +466,7 @@ class TestRanges:
             (1, ['SCP']),
         ])
     def test_AtomsByType(self, datafile, result, idx, types):
-        atomdata = atoms.getAllAtomData(datafile)[0]
+        atomdata = atoms.getAllAtomData(datafile)['atomdata']
         assert len(atoms.getAtomsByType(atomdata, *types)) == result[idx]
 
 
@@ -477,7 +480,7 @@ def test_getTotalMass(dumpfilelines, datafile, result):
                        atoms.getAtomType(datafile),
                        9
                        )
-    masses = atoms.getAtomData(datafile)[1]
+    masses = atoms.getAtomData(datafile)['masses']
     assert atoms.getTotalMass(traj, masses) == pytest.approx(result)
 
 
@@ -534,6 +537,6 @@ def test_getCOM(dumpfilelines,
         #  framename = list(new_traj.keys())[0]
         #  framename = [*new_traj][0]
         #  traj[framename] = new_traj[framename]
-    masses = atoms.getAtomData(datafile)[1]
+    masses = atoms.getAtomData(datafile)['masses']
     com = atoms.getCOM(traj, tsnamerange, atomlist, masses)
     assert com == ref_COM
