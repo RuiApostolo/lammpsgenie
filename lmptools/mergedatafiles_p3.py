@@ -14,27 +14,45 @@ class TooManyArguments(IOError):
     pass
 
 
-try:
-    if len(argv) < 2:
-        for ifile in ['merge.yaml', 'merge.yml']:
-            try:
-                with open(ifile, 'r') as f:
-                    settings = yaml.full_load(f)
-            except IOError:
-                continue
+args = argv
+
+
+def readInputFile(args):
+    try:
+        if len(args) < 2:
+            for ifile in ['merge.yaml', 'merge.yml']:
+                try:
+                    settings = _openYaml(ifile)
+                except IOError:
+                    continue
+            else:
+                raise MissingSettingsFile
+        elif len(args) > 2:
+            raise TooManyArguments
         else:
-            raise MissingSettingsFile
-    elif len(argv) > 2:
-        raise TooManyArguments
-    else:
-        with open(ifile, 'r') as f:
-            settings = yaml.full_load(f)
+            ifile = args[1]
+            settings = _openYaml(ifile)
 
-except MissingSettingsFile:
-    # TODO expand instructions
-    print('Missing settings file: merge.yaml or merge.yml')
-    exit(3)
+    except MissingSettingsFile:
+        # TODO expand instructions
+        _myExit("Missing settings file: merge.yaml or merge.yml", 3)
 
-except TooManyArguments:
-    print("This script takes only one argument, the settings file.")
-    exit(4)
+    except TooManyArguments:
+        _myExit("This script takes only one argument, the settings file.", 4)
+
+    return settings
+
+
+def _myExit(message, code):
+    print(message)
+    exit(code)
+
+
+def _openYaml(ifile):
+    with open(ifile, 'r') as f:
+        settings = yaml.full_load(f)
+    return settings
+
+
+if __name__ == '__main__':
+    readInputFile()
