@@ -30,13 +30,13 @@ def test_readInputFile_fail(testargs, message):
 
 
 ref_mergeYaml = [
-    {"file": "Fe2O3_100_down.lammps",
+    {"filename": "Fe2O3_100_down.lammps",
      "minormax": "max",
      "value": -1.5},
-    {"file": "Fe2O3_100_up.lammps",
+    {"filename": "Fe2O3_100_up.lammps",
      "minormax": "min",
      "value": 80.0},
-    {"file": "gmo.data",
+    {"filename": "gmo.data",
      "minormax": "min",
      "value": 1.5},
     ]
