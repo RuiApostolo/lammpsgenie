@@ -1,10 +1,17 @@
 import pytest
+from pathlib import Path
 import lmptools.readfiles as rdfl
 
 
 @pytest.fixture
 def emptylist():
     return []
+
+
+@pytest.fixture
+def base_path() -> Path:
+    """Get the current folder of the test"""
+    return Path(__file__).parent
 
 
 @pytest.fixture

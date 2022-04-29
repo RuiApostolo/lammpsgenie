@@ -2,7 +2,7 @@
 #  import lmptools.readfiles as rdfl
 #  import lmptools.atoms as atoms
 #  import lmptools.commondata_p3 as cdp3
-import yaml
+from yaml import full_load
 from sys import argv
 
 
@@ -20,9 +20,10 @@ args = argv
 def readInputFile(args):
     try:
         if len(args) < 2:
-            for ifile in ['merge.yaml', 'merge.yml']:
+            for filename in ['merge.yaml', 'merge.yml']:
                 try:
-                    settings = _openYaml(ifile)
+                    settings = _openYaml(filename)
+                    break
                 except IOError:
                     continue
             else:
@@ -30,8 +31,8 @@ def readInputFile(args):
         elif len(args) > 2:
             raise TooManyArguments
         else:
-            ifile = args[1]
-            settings = _openYaml(ifile)
+            filename = args[1]
+            settings = _openYaml(filename)
 
     except MissingSettingsFile:
         # TODO expand instructions
@@ -49,10 +50,13 @@ def _myExit(message, code):
 
 
 def _openYaml(ifile):
+    print(ifile)
     with open(ifile, 'r') as f:
-        settings = yaml.full_load(f)
+        settings = full_load(f)
+    print(settings)
     return settings
 
 
 if __name__ == '__main__':
-    readInputFile()
+    readInputFile()  # pragma: no cover
+    # TODO: consider pytest-console-scripts tests
