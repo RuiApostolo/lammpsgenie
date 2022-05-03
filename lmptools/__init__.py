@@ -3,7 +3,7 @@
 from lmptools.commondata_p3 import getDumpTSRange, readTS, getTrajTSRange
 from lmptools.atoms import getNatoms, getAtomType, getAtomData, getAllAtomData, getAtomRange, getAtomsByType, getTotalMass, getCOM
 from lmptools.readfiles import readAll, readAllGzip
-from lmptools.mergedatafiles_p3 import readInputFile, readTopology, readTopologies
+from lmptools.mergedatafiles_p3 import readInputFile, readTopology, readTopologies, limitsTopology, limitsAllTopologies, absoluteLimitsTopologies, shiftTopology, shiftTopologies
 
 #  sys.path.append('.')
 

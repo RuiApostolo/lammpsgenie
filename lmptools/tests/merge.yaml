@@ -1,9 +1,9 @@
-- filename: Fe2O3_50_down.lammps
+Fe2O3_50_down.lammps:
   minormax: max
   value: -1.5
-- filename: Fe2O3_50_up.lammps
+Fe2O3_50_up.lammps:
   minormax: min
   value: 80.0
-- filename: uadodecane.data
+uadodecane.data:
   minormax: min
   value: 1.5
