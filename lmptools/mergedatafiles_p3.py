@@ -316,7 +316,7 @@ def _strToFunction(settings):
 def _openYaml(ifile):
     with open(ifile, 'r') as f:
         settings = full_load(f)
-    return _strToFunction(settings)
+    return _strToFunction(settings['inputs']), settings['output']
 
 
 def _limit(function, coordinate, topology):
@@ -326,7 +326,7 @@ def _limit(function, coordinate, topology):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    settings = readInputFile()
+    settings, outputfile = readInputFile()
     # read files
     topologies = readTopologies(settings)
     # find minimums and maximums

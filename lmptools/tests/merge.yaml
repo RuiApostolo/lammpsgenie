@@ -1,9 +1,11 @@
-Fe2O3_50_down.lammps:
-  minormax: max
-  value: -1.5
-Fe2O3_50_up.lammps:
-  minormax: min
-  value: 80.0
-uadodecane.data:
-  minormax: min
-  value: 1.5
+output: merged.data.lammps
+inputs:
+  Fe2O3_50_down.lammps:
+    minormax: max
+    value: -1.5
+  Fe2O3_50_up.lammps:
+    minormax: min
+    value: 80.0
+  uadodecane.data:
+    minormax: min
+    value: 1.5

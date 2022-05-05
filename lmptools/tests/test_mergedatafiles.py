@@ -45,7 +45,9 @@ class TestSettings:
     def mock_path(self, monkeypatch):
         monkeypatch.chdir("tests")
 
-    ref_mergeYaml = {
+    ref_mergeYamlOut = "merged.data.lammps"
+
+    ref_mergeYamlIn = {
         "Fe2O3_50_down.lammps": {
             "minormax": max,
             "value": -1.5},
@@ -55,6 +57,11 @@ class TestSettings:
         "uadodecane.data": {
             "minormax": min,
             "value": 1.5},
+        }
+
+    ref_mergeYamlAll = {
+        **{'outputs': ref_mergeYamlOut},
+        **{'inputs': ref_mergeYamlIn}
         }
 
     ref_minmax = {
@@ -88,7 +95,8 @@ class TestSettings:
         return result
 
     def test__openYaml(self, mock_path):
-        assert mdf3._openYaml("merge.yaml") == self.ref_mergeYaml
+        assert mdf3._openYaml("merge.yaml") == \
+            (self.ref_mergeYamlIn, self.ref_mergeYamlOut)
 
     @pytest.mark.parametrize("args", [
         (["", "merge.yaml"]),
@@ -98,10 +106,11 @@ class TestSettings:
     def test_readInputFile_success(self,
                                    mock_path,
                                    args):
-        settings = mdf3.readInputFile(args)
-        assert settings == self.ref_mergeYaml
+        settings, outputfile = mdf3.readInputFile(args)
+        assert settings == self.ref_mergeYamlIn
+        assert outputfile == self.ref_mergeYamlOut
 
-    @pytest.mark.parametrize("file", zipRefs(ref_mergeYaml))
+    @pytest.mark.parametrize("file", zipRefs(ref_mergeYamlIn))
     @pytest.mark.parametrize("coordinate", ['x', 'y', 'z'])
     @pytest.mark.parametrize("function", [min, max])
     def test__limit(self,
@@ -117,7 +126,7 @@ class TestSettings:
 class TestTopologies(TestSettings):
     @pytest.fixture
     def topologies(self):
-        return mdf3.readTopologies(self.ref_mergeYaml)
+        return mdf3.readTopologies(self.ref_mergeYamlIn)
 
     ref_limits = {min: {
                     'x': 0.303,
@@ -158,5 +167,5 @@ class TestTopologies(TestSettings):
     def test_shiftTopologies(self, mock_path, topologies):
         shifted_topologies = mdf3.shiftTopologies(topologies,
                                                   self.ref_minmax,
-                                                  self.ref_mergeYaml)
+                                                  self.ref_mergeYamlIn)
         assert 1 == 1
