@@ -26,18 +26,68 @@ def test__strToFunction(test_dict, message):
     assert message in str(excinfo.value)
 
 
+@pytest.mark.parametrize("start, expected, count", [
+    ({1: [1.002, -0.3, ' SCP'], 2: [2.0, 0.0, 'SCS']},
+     {6: [1.002, -0.3, ' SCP'], 7: [2.0, 0.0, 'SCS']},
+     5),
+    ({1: {'mol': 1,
+          'type': 'SCP',
+          'charge': -0.5,
+          'x': 1.0,
+          'y': 2.0,
+          'z': 2.0}},
+     {2: {'mol': 1,
+          'type': 'SCP',
+          'charge': -0.5,
+          'x': 1.0,
+          'y': 2.0,
+          'z': 2.0}},
+     1),
+])
+def test__shiftBy(start, expected, count):
+    assert mdf3._shiftBy(start, count) == expected
+
+
+@pytest.mark.parametrize("dict_a, dict_b, expected", [
+    ({'atoms': 10, 'bonds': 20, 'angles': 30},
+     {'atoms': 21, 'bonds': 33, 'angles': 47},
+     {'atoms': 31, 'bonds': 53, 'angles': 77}),
+    ({'atoms': 13, 'bonds': 45, 'angles': 35},
+     {'atoms': 21, 'bonds': 26, 'dihedrals': 46},
+     {'atoms': 34, 'bonds': 71, 'angles': 35, 'dihedrals': 46}),
+])
+def test__combineDicts(dict_a, dict_b, expected):
+    assert mdf3._combineDicts(dict_a, dict_b) == expected
+
+
+@pytest.mark.parametrize("dict_a, dict_b, expected", [
+    ({'atoms': 10, 'bonds': 20, 'angles': 30},
+     {'angles': 30, 'dihedrals': 40},
+     {'atoms': 10, 'bonds': 20, 'angles': 30, 'dihedrals': 40}),
+])
+def test__mergeDictsPass(dict_a, dict_b, expected):
+    assert mdf3._mergeDicts(dict_a, dict_b) == expected
+
+
+@pytest.mark.parametrize("dict_a, dict_b, message", [
+    ({'atoms': 10, 'bonds': 20, 'angles': 30},
+     {'angles': 30, 'bonds': 90, 'dihedrals': 40},
+     'bonds')
+])
+def test__mergeDictsRaise(dict_a, dict_b, message):
+    with pytest.raises(mdf3.ValueExists) as excinfo:
+        mdf3._mergeDicts(dict_a, dict_b)
+    assert message in str(excinfo.value)
+
+
 @pytest.mark.parametrize("testargs, message", [
     (["mergedatafile_p3.py"], 'Missing settings'),
     (["mergedatafile_p3.py", "merge2.yaml", "mistake"], 'This script'),
     ])
 def test_readInputFile_fail(testargs, message):
-    try:
-        with pytest.raises(mdf3.MissingSettingsFile) as excinfo:
-            mdf3.readInputFile(testargs)
-        assert message in str(excinfo.value)
-    # catch systemexit and prevent from failing test
-    except SystemExit:
-        pass
+    with pytest.raises(mdf3.MissingSettingsFile) as excinfo:
+        mdf3.readInputFile(testargs)
+    assert message in str(excinfo.value)
 
 
 class TestSettings:

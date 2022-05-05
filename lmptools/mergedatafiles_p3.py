@@ -5,6 +5,7 @@ import lmptools.atoms as atoms
 from yaml import full_load
 from sys import argv, exit
 from copy import deepcopy
+import operator
 
 
 class MissingSettingsFile(IOError):
@@ -12,6 +13,10 @@ class MissingSettingsFile(IOError):
 
 
 class TooManyArguments(IOError):
+    pass
+
+
+class ValueExists(ValueError):
     pass
 
 
@@ -64,13 +69,17 @@ def readInputFile(args):
             filename = args[0]
             return _openYaml(filename)
 
-    except MissingSettingsFile:
+    except MissingSettingsFile as exception:
         # TODO expand instructions
-        _myExit("Missing settings file: merge.yaml or merge.yml", 3)
+        message = "Missing settings file: merge.yaml or merge.yml"
+        raise MissingSettingsFile(message) from exception
+        _myExit(message, 3)
 
-    except TooManyArguments:
+    except TooManyArguments as exception:
         # TODO expand instructions
-        _myExit("This script takes only one argument, the settings file.", 4)
+        message = "This script takes only one argument, the settings file."
+        raise MissingSettingsFile(message) from exception
+        _myExit(message, 4)
 
 
 def readTopology(file):
@@ -298,6 +307,66 @@ def shiftTopologies(topologies, limits, settings, axis='z'):
     return new_topologies
 
 
+def mergeTopologies(topologies):
+    new_topology = {}
+    property_pairs = {
+        'pairtypes': 'atom types',
+        'bondtypes': 'bond types',
+        'angletypes': 'angle types',
+        'dihedraltypes': 'dihedral types',
+        'impropertypes': 'improper types',
+        'atomdata': 'atoms',
+        'bonddata': 'bonds',
+        'angledata': 'angles',
+        'dihedraldata': 'dihedrals',
+        'improperdata': 'impropers',
+    }
+    for topology in topologies:
+        if len(new_topology) == 0:
+            new_topology = deepcopy(topologies[topology])
+        else:
+            shift_values = new_topology['topologycounts']
+            for propert in property_pairs:
+                new_topology[propert] = _shiftBy(
+                    topology[propert],
+                    shift_values[property_pairs[propert]])
+
+            # add topology counts
+            new_topology['topologycounts'] = _combineDicts(
+                shift_values, topologies[topology]['topologycounts'])
+    # limits/boxsize
+    return new_topology
+
+
+def _shiftBy(topology_property, count):
+    return {k + count: v for k, v in topology_property.items()}
+
+
+def _combineDicts(a, b, op=operator.add):
+    # dark magic. From: https://stackoverflow.com/a/11012181
+    return dict(list(a.items()) + list(b.items()) +
+                [(k, op(a[k], b[k])) for k in set(b) & set(a)])
+
+
+def _mergeDicts(a, b):
+    # for mass, warns about similar keys with different values.
+    error = 'Trying to merge two dictionaries that share a key with'\
+            ' different values.'
+    result = deepcopy(a)
+    try:
+        for key in b:
+            if key in a.keys() and a[key] != b[key]:
+                raise ValueExists
+            else:
+                result[key] = b[key]
+    except ValueExists as e:
+        message = f"{error} Offending key: {key}"
+        raise ValueExists(message) from e
+        _myExit(message, 5)
+
+    return result
+
+
 def _myExit(message, code):
     print(message)
     exit(code)
@@ -337,6 +406,8 @@ if __name__ == '__main__':  # pragma: no cover
     limits = limitsAllTopologies(topologies)
     # shift mins/maxs to defined values
     new_topologies = shiftTopologies(topologies, limits, settings)
-    # write new datafile
-
+    #  create new merged topology
+    merged_topology = mergeTopologies(new_topologies)
+    # write merged topology to datafile
+    #  writeTopology(outputfile)
     # TODO: consider pytest-console-scripts tests
