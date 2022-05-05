@@ -4,6 +4,7 @@ import lmptools.atoms as atoms
 #  import lmptools.commondata_p3 as cdp3
 from yaml import full_load
 from sys import argv, exit
+from copy import deepcopy
 
 
 class MissingSettingsFile(IOError):
@@ -242,12 +243,15 @@ def shiftTopology(topology, limits, settings, axis='z'):
         With shifted coordinates
     """
 
+    # copy dictionary. d1 = d2.copy() creates only a pointer
+    new_topology = deepcopy(topology)
     # what to add to current coordinates
+    # 'value' - min/max(minimum_coord, maximum_coord)
     delta = settings['value'] - \
         settings['minormax'](limits[min][axis], limits[max][axis])
-    for atom in topology['atomdata']:
-        topology['atomdata'][atom][axis] += delta
-    return topology
+    for atom in new_topology['atomdata']:
+        new_topology['atomdata'][atom][axis] += delta
+    return new_topology
 
 
 def shiftTopologies(topologies, limits, settings, axis='z'):

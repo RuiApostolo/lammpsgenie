@@ -168,4 +168,6 @@ class TestTopologies(TestSettings):
         shifted_topologies = mdf3.shiftTopologies(topologies,
                                                   self.ref_minmax,
                                                   self.ref_mergeYamlIn)
-        assert 1 == 1
+        assert topologies != shifted_topologies
+        assert mdf3.limitsAllTopologies(shifted_topologies) == \
+            self.approx_double_nested_dict(self.ref_newminmax)
