@@ -307,39 +307,114 @@ def shiftTopologies(topologies, limits, settings, axis='z'):
     return new_topologies
 
 
-def mergeTopologies(topologies):
-    new_topology = {}
+def mergeTopologies(topologies, newboxsize):
+    merged_topology = {}
     property_pairs = {
-        'pairtypes': 'atom types',
-        'bondtypes': 'bond types',
-        'angletypes': 'angle types',
-        'dihedraltypes': 'dihedral types',
-        'impropertypes': 'improper types',
-        'atomdata': 'atoms',
-        'bonddata': 'bonds',
-        'angledata': 'angles',
-        'dihedraldata': 'dihedrals',
-        'improperdata': 'impropers',
+        'pairtypes':
+            {'key': 'atom types',
+             'listid': None,
+             'listelements': None},
+        'bondtypes':
+            {'key': 'bond types',
+             'listid': None,
+             'listelements': None},
+        'angletypes':
+            {'key': 'angle types',
+             'listid': None,
+             'listelements': None},
+        'dihedraltypes':
+            {'key': 'dihedral types',
+             'listid': None,
+             'listelements': None},
+        'impropertypes':
+            {'key': 'improper types',
+             'listid': None,
+             'listelements': None},
+        #  'atomdata':
+        #      {'key': 'atoms',
+        #       'listid': None,
+        #       'listelements': None},
+        'bonddata':
+            {'key': 'bonds',
+             'listid': 'bond types',
+             'listelements': 'atoms'},
+        'angledata':
+            {'key': 'angles',
+             'listid': 'angle types',
+             'listelements': 'atoms'},
+        'dihedraldata':
+            {'key': 'dihedrals',
+             'listid': 'dihedral types',
+             'listelements': 'atoms'},
+        'improperdata':
+            {'key': 'impropers',
+             'listid': 'improper types',
+             'listelements': 'atoms'},
     }
+    molid = 1
     for topology in topologies:
-        if len(new_topology) == 0:
-            new_topology = deepcopy(topologies[topology])
+        # no changes on first topology
+        if len(merged_topology) == 0:
+            merged_topology = deepcopy(topologies[topology])
+            # reset molid just in case
+            merged_topology['atomdata'] = _setMolid(
+                merged_topology['atomdata'], molid)
         else:
-            shift_values = new_topology['topologycounts']
+            shift_values = merged_topology['topologycounts']
+            shift_values[None] = None
             for propert in property_pairs:
-                new_topology[propert] = _shiftBy(
-                    topology[propert],
-                    shift_values[property_pairs[propert]])
-
+                merged_topology[propert] = _mergeDicts(
+                    merged_topology[propert], _shiftList(
+                        topologies[topology][propert],
+                        shift_values[property_pairs[propert]['key']],
+                        shift_values[property_pairs[propert]['listid']],
+                        shift_values[property_pairs[propert]['listelements']],
+                        molid))
+            # masses
+            merged_topology['masses'] = _mergeDicts(
+                merged_topology['masses'], topologies[topology]['masses'])
             # add topology counts
-            new_topology['topologycounts'] = _combineDicts(
+            merged_topology['topologycounts'] = _combineDicts(
                 shift_values, topologies[topology]['topologycounts'])
+        molid += 1
+    merged_topology['boxsize'] = newboxsize
     # limits/boxsize
-    return new_topology
+    # cleanup
+    del merged_topology['topologycounts'][None]
+    return merged_topology
 
 
-def _shiftBy(topology_property, count):
-    return {k + count: v for k, v in topology_property.items()}
+def _shiftKey(topology_property, shiftkey):
+    return {k + shiftkey: v for k, v in topology_property.items()}
+
+
+def _shiftList(topology_property,
+               shiftkey,
+               shiftlistid,
+               shiftlistelements,
+               molid):
+    if topology_property == 'atomdata':
+        new_topology_property = _shiftKey(topology_property, 'atoms')
+        new_topology_property = _setMolid(new_topology_property, molid)
+        return new_topology_property
+    elif shiftlistid is not None:
+        new_topology_property = {}
+        for item in topology_property:
+            new_list = topology_property[item].copy()
+            new_list[0] += shiftlistid
+            new_list[1:] = (x + shiftlistelements for x in new_list[1:])
+            new_topology_property[item + shiftkey] = new_list
+        return new_topology_property
+        #  return {k + shiftkey: [a for a in v] \
+        #  for k, v in topology_property.items()}
+    else:
+        return _shiftKey(topology_property, shiftkey)
+
+
+def _setMolid(topology, molid):
+    for atom in topology:
+        topology[atom]['mol'] = molid
+    return topology
 
 
 def _combineDicts(a, b, op=operator.add):
@@ -399,15 +474,16 @@ def _limit(function, coordinate, topology):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    settings, outputfile = readInputFile()
+    inputs, outputsettings = readInputFile()
     # read files
-    topologies = readTopologies(settings)
+    topologies = readTopologies(inputs)
     # find minimums and maximums
     limits = limitsAllTopologies(topologies)
     # shift mins/maxs to defined values
-    new_topologies = shiftTopologies(topologies, limits, settings)
+    new_topologies = shiftTopologies(topologies, limits, inputs)
     #  create new merged topology
-    merged_topology = mergeTopologies(new_topologies)
+    merged_topology = mergeTopologies(
+        new_topologies, outputsettings['boxsize'])
     # write merged topology to datafile
-    #  writeTopology(outputfile)
+    #  writeTopology(merged_topology, outputsettings['filename'])
     # TODO: consider pytest-console-scripts tests

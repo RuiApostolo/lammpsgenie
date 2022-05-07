@@ -47,7 +47,7 @@ def getAtomType(filename):
         {1: 'CPS', 2: 'OCB'}
     """
 
-    p = re.compile(r"(\s*\d*\s*)(?P<name>[a-zA-Z]*\w*)(\s+\w*)")
+    p = re.compile(r"(\s*\d*\s*)(?P<name>\w+)(\s*\w*)")
     with open(filename, "r") as datafile:
         lines = datafile.read().splitlines()
     for lineindex, line in enumerate(lines):

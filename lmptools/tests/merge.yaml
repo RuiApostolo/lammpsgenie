@@ -1,4 +1,12 @@
-output: merged.data.lammps
+output:
+  filename: merged_uadodecane.lammps
+  boxsize:
+    xlo: 0.0
+    xhi: 55.088
+    ylo: 0.0
+    yhi: 50.38
+    zlo: -20.0
+    zhi: 120.0
 inputs:
   Fe2O3_50_down.lammps:
     minormax: max

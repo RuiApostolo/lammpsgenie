@@ -3,6 +3,36 @@ import lmptools.mergedatafiles_p3 as mdf3
 from conftest import zipRefs
 
 
+ref_mergeYamlOut = {
+    "filename": "merged_uadodecane.lammps",
+    "boxsize": {
+        "xlo": 0.0,
+        "xhi": 55.088,
+        "ylo": 0.0,
+        "yhi": 50.38,
+        "zlo": -20.0,
+        "zhi": 120.0,
+    }
+}
+
+ref_mergeYamlIn = {
+    "Fe2O3_50_down.lammps": {
+        "minormax": max,
+        "value": -1.5},
+    "Fe2O3_50_up.lammps": {
+        "minormax": min,
+        "value": 80.0},
+    "uadodecane.data": {
+        "minormax": min,
+        "value": 1.5},
+    }
+
+ref_mergeYamlAll = {
+    **{'outputs': ref_mergeYamlOut},
+    **{'inputs': ref_mergeYamlIn}
+    }
+
+
 @pytest.mark.parametrize("message, code", [
     ("Message 1", 3),
     ("123 Message test", 4),
@@ -44,8 +74,8 @@ def test__strToFunction(test_dict, message):
           'z': 2.0}},
      1),
 ])
-def test__shiftBy(start, expected, count):
-    assert mdf3._shiftBy(start, count) == expected
+def test__shiftKey(start, expected, count):
+    assert mdf3._shiftKey(start, count) == expected
 
 
 @pytest.mark.parametrize("dict_a, dict_b, expected", [
@@ -95,25 +125,6 @@ class TestSettings:
     def mock_path(self, monkeypatch):
         monkeypatch.chdir("tests")
 
-    ref_mergeYamlOut = "merged.data.lammps"
-
-    ref_mergeYamlIn = {
-        "Fe2O3_50_down.lammps": {
-            "minormax": max,
-            "value": -1.5},
-        "Fe2O3_50_up.lammps": {
-            "minormax": min,
-            "value": 80.0},
-        "uadodecane.data": {
-            "minormax": min,
-            "value": 1.5},
-        }
-
-    ref_mergeYamlAll = {
-        **{'outputs': ref_mergeYamlOut},
-        **{'inputs': ref_mergeYamlIn}
-        }
-
     ref_minmax = {
         # each line: x_min, y_min, z_min, x_max, y_max, z_max
         "Fe2O3_50_down.lammps": {
@@ -146,7 +157,7 @@ class TestSettings:
 
     def test__openYaml(self, mock_path):
         assert mdf3._openYaml("merge.yaml") == \
-            (self.ref_mergeYamlIn, self.ref_mergeYamlOut)
+            (ref_mergeYamlIn, ref_mergeYamlOut)
 
     @pytest.mark.parametrize("args", [
         (["", "merge.yaml"]),
@@ -157,8 +168,8 @@ class TestSettings:
                                    mock_path,
                                    args):
         settings, outputfile = mdf3.readInputFile(args)
-        assert settings == self.ref_mergeYamlIn
-        assert outputfile == self.ref_mergeYamlOut
+        assert settings == ref_mergeYamlIn
+        assert outputfile == ref_mergeYamlOut
 
     @pytest.mark.parametrize("file", zipRefs(ref_mergeYamlIn))
     @pytest.mark.parametrize("coordinate", ['x', 'y', 'z'])
@@ -176,7 +187,7 @@ class TestSettings:
 class TestTopologies(TestSettings):
     @pytest.fixture
     def topologies(self):
-        return mdf3.readTopologies(self.ref_mergeYamlIn)
+        return mdf3.readTopologies(ref_mergeYamlIn)
 
     ref_limits = {min: {
                     'x': 0.303,
@@ -217,7 +228,15 @@ class TestTopologies(TestSettings):
     def test_shiftTopologies(self, mock_path, topologies):
         shifted_topologies = mdf3.shiftTopologies(topologies,
                                                   self.ref_minmax,
-                                                  self.ref_mergeYamlIn)
+                                                  ref_mergeYamlIn)
         assert topologies != shifted_topologies
         assert mdf3.limitsAllTopologies(shifted_topologies) == \
             self.approx_double_nested_dict(self.ref_newminmax)
+        expected_merged = mdf3.readTopology('merged_uadodecane.lammps')
+        test_merged = mdf3.mergeTopologies(
+            shifted_topologies, ref_mergeYamlOut['boxsize'])
+        for atom in test_merged['atomdata']:
+            assert test_merged['atomdata'][atom] == \
+                pytest.approx(expected_merged['atomdata'][atom])
+        for propert in [prop for prop in test_merged if prop != 'atomdata']:
+            assert test_merged[propert] == expected_merged[propert]
