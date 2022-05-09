@@ -2,6 +2,15 @@ import re
 import lmptools.readfiles as rdfl
 
 
+# TODO: either move back, or make everything like this
+g_coeffs = {'Pair Coeffs': 'atom types',
+            'Bond Coeffs': 'bond types',
+            'Angle Coeffs': 'angle types',
+            'Dihedral Coeffs': 'dihedral types',
+            'Improper Coeffs': 'improper types',
+            }
+
+
 def getNatoms(lines):
     """
     Gets the total number of atoms in dump file.
@@ -53,9 +62,9 @@ def getAtomType(filename):
     for lineindex, line in enumerate(lines):
         if "atom types" in line:
             natomtypes = int(line.split()[0])
-            print()
-            print(f"Found {natomtypes} atom types.")
-            print()
+            #  print()
+            #  print(f"Found {natomtypes} atom types.")
+            #  print()
             atomnames = {}
         if "Pair Coeffs" in line:
             for i in range(1, natomtypes + 1):
@@ -83,6 +92,10 @@ def getAtomData(filename):
     Returns
     -------
     Topology : dict, comprised of
+        atomnames : dict
+            A dictionary with the LAMMPS atom type numbers as keys, and the
+            custom atom type names as values. From getAtomType().
+
         masses : dict
             The atomic masses. Each entry takes the form:
             type (str): mass (float)
@@ -117,6 +130,7 @@ def getAtomData(filename):
     return {
         'topologycounts': {},
         'boxsize': {},
+        'atomnames': atomnames,
         'pairtypes': {},
         'bondtypes': {},
         'angletypes': {},
@@ -131,8 +145,7 @@ def getAtomData(filename):
             }
 
 
-# TODO docstring
-def getAllAtomData(filename): #noqa C901
+def getAllAtomData(filename):  # noqa C901
     """
     Retrieves every piece of atom data from a LAMMPS data file.
 
@@ -153,9 +166,9 @@ def getAllAtomData(filename): #noqa C901
             'atoms', 'bonds', 'angles', 'dihedrals', 'impropers', 'atom types',
             'bond types', 'angle types', 'dihedral types' and 'improper types'.
 
-        masses : dict
-            The atomic masses. Each entry takes the form:
-            type (str): mass (float)
+        atomnames : dict
+            A dictionary with the LAMMPS atom type numbers as keys, and the
+            custom atom type names as values. From getAtomType().
 
         boxsize : dict
             The simulaton box size. The dictionary takes the form:
@@ -164,13 +177,17 @@ def getAllAtomData(filename): #noqa C901
             'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
             in accordance with LAMMPS data file syntax.
 
-        pair, bond, angle, dihedral, imp : dict
+        pairtypes, bondtypes, angletypes, dihedraltypes, impropertypes : dict
             The pair, bond, angle, dihedral, and improper coefficients.
             Each dictionary entry takes the form:
             property_type (int) : [*coeffs, 'comment'] list of floats + str
             The number of coefficients can vary depending on the particular
             property. Pair, bond, angles, and impropers usually have 2,
             dihedrals usually have 4. The function accepts any number.
+
+        masses : dict
+            The atomic masses. Each entry takes the form:
+            type (str): mass (float)
 
         atomdata : dict
             Each entry of the dictionary takes the form:
@@ -218,12 +235,8 @@ def getAllAtomData(filename): #noqa C901
         'dihedral types': 0,
         'improper types': 0
     }
-    coeffs = {'Pair Coeffs': ['atom types', {}],
-              'Bond Coeffs': ['bond types', {}],
-              'Angle Coeffs': ['angle types', {}],
-              'Dihedral Coeffs': ['dihedral types', {}],
-              'Improper Coeffs': ['improper types', {}]
-              }
+    coeffs = {coeff: {'name': value, 'list': {}}
+              for coeff, value in g_coeffs.items()}
     badis = {'Bonds': {},
              'Angles': {},
              'Dihedrals': {},
@@ -244,10 +257,10 @@ def getAllAtomData(filename): #noqa C901
         elif any(coeff in line for coeff in coeffs):
             for coeff in coeffs:
                 if coeff in line:
-                    coeffs[coeff][1] = \
+                    coeffs[coeff]['list'] = \
                         _getCoeffs(lines,
                                    line_idx,
-                                   topologycounts[coeffs[coeff][0]])
+                                   topologycounts[coeffs[coeff]['name']])
 
         elif "Masses" in line:
             masses = _getMasses(lines,
@@ -269,13 +282,14 @@ def getAllAtomData(filename): #noqa C901
                                            topologycounts[badi.lower()])
 
     pairtypes, bondtypes, angletypes, dihedraltypes, impropertypes = \
-        [coeffs[coeff][1] for coeff in coeffs]
+        [coeffs[coeff]['list'] for coeff in coeffs]
     bonddata, angledata, dihedraldata, improperdata = \
         [badis[badi] for badi in badis]
 
     return {
         'topologycounts': topologycounts,
         'boxsize': boxsize,
+        'atomnames': atomnames,
         'pairtypes': pairtypes,
         'bondtypes': bondtypes,
         'angletypes': angletypes,
@@ -474,7 +488,7 @@ def _getMasses(lines, line_idx, natomtypes, atomnames):
     masses = {}
     for atomtype in range(int(natomtypes)):
         el = lines[line_idx + 2 + atomtype].split()
-        print(el)
+        #  print(el)
         # assign masses by atom type
         masses[atomnames[int(el[0])]] = float(el[1])
     return masses
@@ -574,8 +588,6 @@ def _getCoeffs(lines, line_idx, number):
     for coeff in range(1, int(number) + 1):
         params, comment = lines[line_idx + 1 + coeff].split('#')
         result[coeff] = _getParams(params, float) + [comment]
-    #  print("Angle Coeffs")
-    #  print(angle)
     return result
 
 

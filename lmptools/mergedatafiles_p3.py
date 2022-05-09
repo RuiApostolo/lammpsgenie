@@ -1,11 +1,22 @@
-#!/usr/bin/python3
-#  import lmptools.readfiles as rdfl
+#!/bin/env python3
 import lmptools.atoms as atoms
-#  import lmptools.commondata_p3 as cdp3
+from lmptools._version import __version__
+from lmptools._name import _name
 from yaml import full_load
 from sys import argv, exit
 from copy import deepcopy
+from datetime import datetime
+from os.path import basename
 import operator
+
+
+coeffs_equiv = {
+    'Pair Coeffs': 'pairtypes',
+    'Bond Coeffs': 'bondtypes',
+    'Angle Coeffs': 'angletypes',
+    'Dihedral Coeffs': 'dihedraltypes',
+    'Improper Coeffs': 'impropertypes',
+    }
 
 
 class MissingSettingsFile(IOError):
@@ -21,6 +32,7 @@ class ValueExists(ValueError):
 
 
 args = argv
+_this_file = basename(__file__)
 
 
 def readInputFile(args):
@@ -249,7 +261,8 @@ def shiftTopology(topology, limits, settings, axis='z'):
     Returns
     -------
     topology : nested dicts
-        With shifted coordinates
+        Dictionary in the style of atoms.getAllAtomData(), with shifted
+        coordinates.
     """
 
     # copy dictionary. d1 = d2.copy() creates only a pointer
@@ -308,8 +321,37 @@ def shiftTopologies(topologies, limits, settings, axis='z'):
 
 
 def mergeTopologies(topologies, newboxsize):
+    """
+    Merges a dictionary containing several topologies into one single
+    topology.
+
+    Parameters
+    ----------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    newboxsize : dict
+        New simulation box size, intended to be read from settings file.
+        The dictionary takes the form:
+        coordinate (str) : float
+        where coordinate is can take the values:
+        'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
+        in accordance with LAMMPS data file syntax.
+
+    Returns
+    -------
+    topology : nested dicts
+        New, merged topology. Dictionary in the style of
+        atoms.getAllAtomData().
+    """
+
     merged_topology = {}
     property_pairs = {
+        'atomnames':
+            {'key': 'atom types',
+             'listid': None,
+             'listelements': None},
         'pairtypes':
             {'key': 'atom types',
              'listid': None,
@@ -330,10 +372,6 @@ def mergeTopologies(topologies, newboxsize):
             {'key': 'improper types',
              'listid': None,
              'listelements': None},
-        #  'atomdata':
-        #      {'key': 'atoms',
-        #       'listid': None,
-        #       'listelements': None},
         'bonddata':
             {'key': 'bonds',
              'listid': 'bond types',
@@ -370,6 +408,8 @@ def mergeTopologies(topologies, newboxsize):
                         shift_values[property_pairs[propert]['listid']],
                         shift_values[property_pairs[propert]['listelements']],
                         molid))
+            # atomdata
+            # TODO
             # masses
             merged_topology['masses'] = _mergeDicts(
                 merged_topology['masses'], topologies[topology]['masses'])
@@ -377,14 +417,124 @@ def mergeTopologies(topologies, newboxsize):
             merged_topology['topologycounts'] = _combineDicts(
                 shift_values, topologies[topology]['topologycounts'])
         molid += 1
-    merged_topology['boxsize'] = newboxsize
     # limits/boxsize
+    merged_topology['boxsize'] = newboxsize
     # cleanup
     del merged_topology['topologycounts'][None]
     return merged_topology
 
 
-def _shiftKey(topology_property, shiftkey):
+def writeTopology(topology, filename):
+    """
+    Writes topology to a file in the LAMMPS data format.
+
+    Parameters
+    ----------
+    topology : nested dicts
+        Dictionary in the style of atoms.getAllAtomData().
+
+    filename : str
+        Name of the datafile to be write topology to.
+    """
+
+    names = topology['atomnames']
+
+    with open(filename, "w") as f:
+        # LAMMPS ignores the first line. Let's print some useful data. Max 254
+        # characters.
+        date = (datetime.now()
+                        .astimezone()
+                        .replace(microsecond=0)
+                        .isoformat(' ')
+                )
+        firstline = (f"LAMMPS data file merged using {_name}.{_this_file} "
+                     f"version {__version__} "
+                     f"on {date}"
+                     )[:254]
+
+        f.write(firstline)
+        # .write() does not do \n automatically:
+        f.write("\n")
+        # Header
+        for propert in topology['topologycounts']:
+            f.write(f"{topology['topologycounts'][propert]} {propert}\n")
+        # Box size
+        box = topology['boxsize']
+        for low, high in zip(list(box.keys())[::2], list(box.keys())[1::2]):
+            f.write(f"{box[low]} {box[high]} {low} {high}\n")
+        # Finish section
+        f.write("\n")
+
+        # Pair/Bond/Angle/Dihedral/Improper Coeffs
+        for coeff in coeffs_equiv:
+            # Write only if it's > 0
+            if topology['topologycounts'][atoms.g_coeffs[coeff]] > 0:
+                # using g_coeffs because lammps uses pair types and atom types
+                # using always the same designation would make things too easy.
+                f.write(coeff)
+                f.write("\n")
+                # Empty line
+                f.write("\n")
+                section = topology[coeffs_equiv[coeff]]
+                for line in section:
+                    # id
+                    params = [str(a) for a in section[line][:-1]]
+                    f.write(f"{str(line)}")
+                    f.write(" ")
+                    f.write(f"{' '.join(params)}")
+                    f.write(f" # {section[line][-1].lstrip()}")
+                    f.write("\n")
+                # Finish section
+                f.write("\n")
+
+        # Masses
+        if len(topology['masses']) > 0:
+            f.write("Masses")
+            f.write("\n")
+            # Empty line
+            f.write("\n")
+            for atomtype in topology['atomnames']:
+                # id
+                f.write(f"{atomtype}")
+                f.write(" ")
+                # mass
+                f.write(f"{topology['masses'][names[atomtype]]}")
+                # atom type str
+                f.write(f" # {topology['atomnames'][atomtype]}")
+                f.write("\n")
+            f.write("\n")
+
+        # Atom data
+        if len(topology['atomdata']) > 0:
+            f.write("Atoms")
+            f.write("\n")
+            # Empty line
+            f.write("\n")
+            for atom in topology['atomdata']:
+                f.write(f"{atom}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['mol']}")
+                f.write(" ")
+                #  f.write(f"{names[topology['atomdata'][atom]['type']]}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['charge']}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['x']}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['y']}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['z']}")
+                # atom type str
+                f.write(f" # {topology['atomdata'][atom]['type']}")
+                f.write("\n")
+
+        # Bond/Angle/Dihedral/Improper data
+
+    return
+
+
+def _shiftKey(topology_property: dict, shiftkey: int):
+    # adds shiftkey to dictionarty key (int)
     return {k + shiftkey: v for k, v in topology_property.items()}
 
 
@@ -393,6 +543,14 @@ def _shiftList(topology_property,
                shiftlistid,
                shiftlistelements,
                molid):
+    """
+    shifts dict of lists.
+    {key + shiftkey:
+        [listid + shiftlistid,
+        el + shiftlistelements,
+        el + shiftlistelements, etc]}
+    """
+
     if topology_property == 'atomdata':
         new_topology_property = _shiftKey(topology_property, 'atoms')
         new_topology_property = _setMolid(new_topology_property, molid)
@@ -412,6 +570,7 @@ def _shiftList(topology_property,
 
 
 def _setMolid(topology, molid):
+    # changes molid
     for atom in topology:
         topology[atom]['mol'] = molid
     return topology
@@ -448,6 +607,7 @@ def _myExit(message, code):
 
 
 def _strToFunction(settings):
+    # changes min/max (str) to min/max (function)
     for key in settings:
         func = settings[key]['minormax']
         if func == 'min':
@@ -462,19 +622,21 @@ def _strToFunction(settings):
 
 
 def _openYaml(ifile):
+    # to read settings file
     with open(ifile, 'r') as f:
         settings = full_load(f)
     return _strToFunction(settings['inputs']), settings['output']
 
 
 def _limit(function, coordinate, topology):
+    # gets min/max coordinates in topology
     return topology['atomdata'][function(
         topology['atomdata'], key=lambda atom:
             topology['atomdata'][atom][coordinate])][coordinate]
 
 
 if __name__ == '__main__':  # pragma: no cover
-    inputs, outputsettings = readInputFile()
+    inputs, outputsettings = readInputFile(args)
     # read files
     topologies = readTopologies(inputs)
     # find minimums and maximums
@@ -485,5 +647,5 @@ if __name__ == '__main__':  # pragma: no cover
     merged_topology = mergeTopologies(
         new_topologies, outputsettings['boxsize'])
     # write merged topology to datafile
-    #  writeTopology(merged_topology, outputsettings['filename'])
+    writeTopology(merged_topology, outputsettings['filename'])
     # TODO: consider pytest-console-scripts tests

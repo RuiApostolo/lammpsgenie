@@ -79,6 +79,9 @@ def test__shiftKey(start, expected, count):
 
 
 @pytest.mark.parametrize("dict_a, dict_b, expected", [
+    ({'atoms': 1},
+     {'atoms': 2},
+     {'atoms': 3}),
     ({'atoms': 10, 'bonds': 20, 'angles': 30},
      {'atoms': 21, 'bonds': 33, 'angles': 47},
      {'atoms': 31, 'bonds': 53, 'angles': 77}),
@@ -225,6 +228,7 @@ class TestTopologies(TestSettings):
         assert mdf3.absoluteLimitsTopologies(topologies) == \
             self.approx_nested_dict(self.ref_limits)
 
+    # TODO: change to class
     def test_shiftTopologies(self, mock_path, topologies):
         shifted_topologies = mdf3.shiftTopologies(topologies,
                                                   self.ref_minmax,

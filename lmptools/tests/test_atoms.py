@@ -254,6 +254,7 @@ class TestAtomDataLarge:
                              atomdata, \
                              masses, \
                              boxsizes, \
+                             atomnames, \
                              paircoeffs, \
                              bondcoeffs, \
                              anglecoeffs, \
@@ -263,6 +264,7 @@ class TestAtomDataLarge:
                                      ref_atom_data,
                                      ref_masses,
                                      ref_boxsizes,
+                                     ref_atom_types,
                                      ref_pair_coeffs,
                                      ref_bond_coeffs,
                                      ref_angle_coeffs,
@@ -273,6 +275,7 @@ class TestAtomDataLarge:
                                  atomdata,
                                  masses,
                                  boxsizes,
+                                 atomnames,
                                  paircoeffs,
                                  bondcoeffs,
                                  anglecoeffs,
@@ -287,6 +290,7 @@ class TestAtomDataLarge:
         assert data['angletypes'] == anglecoeffs
         assert data['dihedraltypes'] == dihedralcoeffs
         assert data['impropertypes'] == impropercoeffs
+        assert data['atomnames'] == atomnames
 
 
 class TestAtomDataSmall:

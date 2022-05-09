@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="lmptools",
-    version="0.0.3",
+    version="0.1.0",
     author="Rui Apóstolo",
     author_email="ruiapostolo@gmail.com",
     description="A package to help with LAMMPS data and dump files",
@@ -24,5 +24,5 @@ setuptools.setup(
     package_dir={"": "lmptools"},
     packages=setuptools.find_packages(where="lmptools"),
     python_requires=">=3.6",
-    scripts=['mergefiles'],
+    scripts=['lmptools/mergedatafiles_p3.py'],
 )
