@@ -444,6 +444,10 @@ def writeTopology(topology, filename):
     """
 
     names = topology['atomnames']
+    badis = {'bonddata': "Bonds",
+             'angledata': "Angles",
+             'dihedraldata': "Dihedrals",
+             'improperdata': "Impropers"}
 
     with open(filename, "w") as f:
         # LAMMPS ignores the first line. Let's print some useful data. Max 254
@@ -533,8 +537,21 @@ def writeTopology(topology, filename):
                 # atom type str
                 f.write(f" # {names[topology['atomdata'][atom]['type']]}")
                 f.write("\n")
+            f.write("\n")
 
         # Bond/Angle/Dihedral/Improper data
+        for badi in badis:
+            if len(topology[badi]) > 0:
+                f.write(badis[badi])
+                f.write("\n")
+                # Empty line
+                f.write("\n")
+                for line in topology[badi]:
+                    string = str(line) + ' ' + ' '.join(
+                        [str(a) for a in topology[badi][line]])
+                    f.write(string)
+                    f.write("\n")
+                f.write("\n")
 
     return
 
@@ -557,11 +574,6 @@ def _shiftDictOfLists(topology_property,
         el + shiftlistelements, etc]}
     """
 
-    #  if topology_property == 'atomdata':
-    #      new_topology_property = _shiftKey(topology_property, 'atoms')
-    #      new_topology_property = _shiftKey(new_topology_property, 'types')
-    #      new_topology_property = _setMolid(new_topology_property, molid)
-    #      return new_topology_property
     if shiftlistid is not None:
         new_topology_property = {}
         for item in topology_property:
