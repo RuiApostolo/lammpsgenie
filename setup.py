@@ -24,5 +24,8 @@ setuptools.setup(
     package_dir={"": "lmptools"},
     packages=setuptools.find_packages(where="lmptools"),
     python_requires=">=3.6",
+    install_requires=[
+        "PyYAML<=5.3.1"
+    ],
     scripts=['lmptools/mergedatafiles_p3.py'],
 )
