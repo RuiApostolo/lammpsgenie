@@ -1,5 +1,6 @@
 import re
 import lmptools.readfiles as rdfl
+from collections import defaultdict
 
 
 # TODO: either move back, or make everything like this
@@ -103,7 +104,7 @@ def getAtomData(filename):
         atomdata : dict
             Each entry of the dictionary takes the form:
             atomid (int): {'mol': int,
-                           'type': str,
+                           'type': int,
                            'charge': float,
                            'x': float,
                            'y': float,
@@ -192,7 +193,7 @@ def getAllAtomData(filename):  # noqa C901
         atomdata : dict
             Each entry of the dictionary takes the form:
             atomid (int): {'mol': int,
-                           'type': str,
+                           'type': int,
                            'charge': float,
                            'x': float,
                            'y': float,
@@ -313,7 +314,7 @@ def getAtomRange(atomdata, atom1, atom2):
     atomdata : dict
         Each entry of the dictionary takes the form:
         atomid (int): {'mol': int,
-                       'type': str,
+                       'type': int,
                        'charge': float,
                        'x': float,
                        'y': float,
@@ -341,21 +342,25 @@ def getAtomRange(atomdata, atom1, atom2):
         return []
 
 
-def getAtomsByType(atomdata, *types):
+def getAtomsByType(atomdata, atomnames, *types):
     """
     Returns list of atom ids that correspond to `types`.
 
     Parameters
     ----------
     atomdata : dict
-
         Each entry of the dictionary takes the form:
         atomid (int): {'mol': int,
-                       'type': str,
+                       'type': int,
                        'charge': float,
                        'x': float,
                        'y': float,
                        'z': float}
+
+    atomnames : dict
+        A dictionary with the LAMMPS atom type numbers as keys, and the
+        custom atom type names as values. From getAtomType().
+
     *types: str
         Atom types in string form.
 
@@ -366,10 +371,11 @@ def getAtomsByType(atomdata, *types):
     """
 
     atomrange = []
+    atomnames = _invertDictToList(atomnames)
     sortedatomnum = sorted(atomdata.keys())
     for atom in sortedatomnum:
         for typ in types:
-            if atomdata[atom]['type'] == typ:
+            if atomdata[atom]['type'] in [a for a in atomnames[typ]]:
                 atomrange.append(atom)
     return atomrange
 
@@ -516,7 +522,7 @@ def _getAtoms(lines, line_idx, natoms, atomnames):
     atomdata : dict
         Each entry of the dictionary takes the form:
         atomid (int): {'mol': int,
-                       'type': str,
+                       'type': int,
                        'charge': float,
                        'x': float,
                        'y': float,
@@ -537,9 +543,10 @@ def _getAtoms(lines, line_idx, natoms, atomnames):
                 atomdata[atomid][column] = \
                     float(el[columns.index(column) + 1])
             # print(atomnames)
-        # replace type from int to str
-        atomdata[atomid]['type'] = \
-            atomnames[int(atomdata[atomid]['type'])]
+        # replace type from int to str -- BAD IDEA, can't then demux back to
+        # ints if more than one merged file shares same atom type names.
+        #  atomdata[atomid]['type'] = \
+        #      atomnames[int(atomdata[atomid]['type'])]
     return atomdata
 
 
@@ -614,3 +621,13 @@ def _getBADI(lines, line_idx, number):
     for line in range(1, int(number) + 1):
         result[line] = _getParams(lines[line_idx + 1 + line], int)
     return result
+
+
+def _invertDictToList(dictionary):
+    # from a dict of {key (int): value (str)}, inverts to:
+    # {value (str): [key, key, key, key] (list of ints)}
+    # each new_key will have new_values that had common old_values
+    reverse_dict = defaultdict(list)
+    for key, value in dictionary.items():
+        reverse_dict[value].append(key)
+    return reverse_dict

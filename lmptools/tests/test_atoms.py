@@ -30,35 +30,35 @@ class TestAtomDataLarge:
     ref_atom_data = [
         # ua_dodecane
         {'mol': 1,
-         'type': 'SCP',
+         'type': 1,
          'charge': 0.0,
          'x': 36.114258,
          'y': 28.328382,
          'z': 34.113575},
         # ketene
         {'mol': 1,
-         'type': 'CHK',
+         'type': 1,
          'charge': -0.25,
          'x': -2.1294,
          'y': 0.4027,
          'z': 0.0},
         # oxirene
         {'mol': 1,
-         'type': 'COO',
+         'type': 1,
          'charge': 0.135,
          'x': 1.00761,
          'y': -0.2128,
          'z': -0.182370},
         # ethynol
         {'mol': 1,
-         'type': 'CHE',
+         'type': 1,
          'charge': -0.21,
          'x': 1.092820,
          'y': -0.05313,
          'z': 0.09623},
         # oxirene_bare
         {'mol': 1,
-         'type': '1',
+         'type': 1,
          'charge': 0.135,
          'x': 1.00761,
          'y': -0.2128,
@@ -463,7 +463,8 @@ class TestRanges:
 
     # TODO: could use some more test cases
     @pytest.mark.parametrize("datafile, result",
-                             zipRefs(ref_data_files_large(), ref_AtomTypes))
+                             zipRefs(ref_data_files_large(),
+                                     ref_AtomTypes))
     @pytest.mark.parametrize(
         "idx, types", [
             (0, ['SCS', 'SCP']),
@@ -471,7 +472,9 @@ class TestRanges:
         ])
     def test_AtomsByType(self, datafile, result, idx, types):
         atomdata = atoms.getAllAtomData(datafile)['atomdata']
-        assert len(atoms.getAtomsByType(atomdata, *types)) == result[idx]
+        atomnames = atoms.getAtomType(datafile)
+        assert len(atoms.getAtomsByType(atomdata, atomnames, *types)) == \
+            result[idx]
 
 
 @pytest.mark.parametrize(
