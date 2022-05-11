@@ -3,7 +3,7 @@ import lmptools.atoms as atoms
 from lmptools._version import __version__
 from lmptools._name import _name
 from yaml import full_load
-from sys import argv, exit
+from sys import argv
 from copy import deepcopy
 from datetime import datetime
 from os.path import basename
@@ -84,14 +84,14 @@ def readInputFile(args):
     except MissingSettingsFile as exception:
         # TODO expand instructions
         message = "Missing settings file: merge.yaml or merge.yml"
+        print(message)
         raise MissingSettingsFile(message) from exception
-        _myExit(message, 3)
 
     except TooManyArguments as exception:
         # TODO expand instructions
         message = "This script takes only one argument, the settings file."
+        print(message)
         raise MissingSettingsFile(message) from exception
-        _myExit(message, 4)
 
 
 def readTopology(file):
@@ -472,13 +472,13 @@ def writeTopology(topology, filename):
         box = topology['boxsize']
         for low, high in zip(list(box.keys())[::2], list(box.keys())[1::2]):
             f.write(f"{box[low]} {box[high]} {low} {high}\n")
-        # Finish section
-        f.write("\n")
 
         # Pair/Bond/Angle/Dihedral/Improper Coeffs
         for coeff in coeffs_equiv:
             # Write only if it's > 0
             if topology['topologycounts'][atoms.g_coeffs[coeff]] > 0:
+                # start section, separate from previous
+                f.write("\n")
                 # using g_coeffs because lammps uses pair types and atom types
                 # using always the same designation would make things too easy.
                 f.write(coeff)
@@ -494,11 +494,11 @@ def writeTopology(topology, filename):
                     f.write(f"{' '.join(params)}")
                     f.write(f" # {section[line][-1].lstrip()}")
                     f.write("\n")
-                # Finish section
-                f.write("\n")
 
         # Masses
         if len(topology['masses']) > 0:
+            # start section, separate from previous
+            f.write("\n")
             f.write("Masses")
             f.write("\n")
             # Empty line
@@ -508,14 +508,15 @@ def writeTopology(topology, filename):
                 f.write(f"{atomtype}")
                 f.write(" ")
                 # mass
-                f.write(f"{topology['masses'][names[atomtype]]}")
+                f.write(f"{topology['masses'][names[atomtype]]:.4f}")
                 # atom type str
                 f.write(f" # {topology['atomnames'][atomtype]}")
                 f.write("\n")
-            f.write("\n")
 
         # Atom data
         if len(topology['atomdata']) > 0:
+            # start section, separate from previous
+            f.write("\n")
             f.write("Atoms")
             f.write("\n")
             # Empty line
@@ -527,17 +528,18 @@ def writeTopology(topology, filename):
                 f.write(" ")
                 f.write(f"{topology['atomdata'][atom]['type']}")
                 f.write(" ")
-                f.write(f"{topology['atomdata'][atom]['charge']}")
+                # 4 decimal places for charge
+                f.write(f"{topology['atomdata'][atom]['charge']:.4f}")
                 f.write(" ")
-                f.write(f"{topology['atomdata'][atom]['x']}")
+                # 6 decimal places for coordinates
+                f.write(f"{topology['atomdata'][atom]['x']:.6f}")
                 f.write(" ")
-                f.write(f"{topology['atomdata'][atom]['y']}")
+                f.write(f"{topology['atomdata'][atom]['y']:.6f}")
                 f.write(" ")
-                f.write(f"{topology['atomdata'][atom]['z']}")
+                f.write(f"{topology['atomdata'][atom]['z']:.6f}")
                 # atom type str
                 f.write(f" # {names[topology['atomdata'][atom]['type']]}")
                 f.write("\n")
-            f.write("\n")
 
         # Bond/Angle/Dihedral/Improper data
         f.write(_getStringBADI(topology, badis))
@@ -546,14 +548,15 @@ def writeTopology(topology, filename):
 
 
 def _getStringBADI(topology, badis):
+    # writeTopology helper function, takes topology dict and badis dict,
+    # returns string of all the lines in all BADIS ready to be written to file.
     string = ''
     for badi in badis:
         if len(topology[badi]) > 0:
-            string += str(badis[badi]) + '\n\n'
+            string += str('\n' + badis[badi]) + '\n\n'
             for line in topology[badi]:
                 string += str(line) + ' ' + ' '.join(
                     [str(a) for a in topology[badi][line]]) + '\n'
-            string += '\n'
     return string
 
 
@@ -643,15 +646,10 @@ def _mergeDicts(a, b):
                 result[key] = b[key]
     except ValueExists as e:
         message = f"{error} Offending key: {key}"
+        print(message)
         raise ValueExists(message) from e
-        _myExit(message, 5)
 
     return result
-
-
-def _myExit(message, code):
-    print(message)
-    exit(code)
 
 
 def _strToFunction(settings):

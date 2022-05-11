@@ -1,6 +1,7 @@
 import pytest
 import lmptools.mergedatafiles_p3 as mdf3
 from conftest import zipRefs
+from copy import deepcopy
 
 
 ref_mergeYamlOut = {
@@ -31,19 +32,6 @@ ref_mergeYamlAll = {
     **{'outputs': ref_mergeYamlOut},
     **{'inputs': ref_mergeYamlIn}
     }
-
-
-@pytest.mark.parametrize("message, code", [
-    ("Message 1", 3),
-    ("123 Message test", 4),
-    ])
-def test__myExit(message, code, capsys):
-    with pytest.raises(SystemExit) as exc_info:
-        mdf3._myExit(message, code)
-    assert exc_info.type is SystemExit
-    assert exc_info.value.code == code
-    captured = capsys.readouterr()
-    assert captured.out == message + "\n"
 
 
 @pytest.mark.parametrize("test_dict, message", [
@@ -228,19 +216,78 @@ class TestTopologies(TestSettings):
         assert mdf3.absoluteLimitsTopologies(topologies) == \
             self.approx_nested_dict(self.ref_limits)
 
-    # TODO: change to class
-    def test_shiftTopologies(self, mock_path, topologies):
-        shifted_topologies = mdf3.shiftTopologies(topologies,
-                                                  self.ref_minmax,
-                                                  ref_mergeYamlIn)
+
+class TestMerge(TestTopologies):
+    @pytest.fixture
+    def shifted_topologies(self, topologies):
+        return mdf3.shiftTopologies(topologies,
+                                    self.ref_minmax,
+                                    ref_mergeYamlIn)
+
+    @pytest.fixture
+    def expected_merged(self):
+        return mdf3.readTopology('expected_merged_uadodecane.lammps')
+
+    @pytest.fixture
+    def merged_undertest1(self, shifted_topologies):
+        return mdf3.mergeTopologies(
+            shifted_topologies, ref_mergeYamlOut['boxsize'])
+
+    @pytest.fixture
+    def merged_undertest2(self, merged_undertest1):
+        merged_undertest2 = deepcopy(merged_undertest1)
+        merged_undertest2['masses'] = {}
+        merged_undertest2['atomdata'] = {}
+        return merged_undertest2
+
+    def test_shiftTopologies(self, mock_path, topologies, shifted_topologies):
         assert topologies != shifted_topologies
+
+    def test_limitsAllTopologies(self,
+                                 mock_path,
+                                 topologies,
+                                 shifted_topologies):
         assert mdf3.limitsAllTopologies(shifted_topologies) == \
             self.approx_double_nested_dict(self.ref_newminmax)
-        expected_merged = mdf3.readTopology('merged_uadodecane.lammps')
-        test_merged = mdf3.mergeTopologies(
-            shifted_topologies, ref_mergeYamlOut['boxsize'])
-        for atom in test_merged['atomdata']:
-            assert test_merged['atomdata'][atom] == \
+
+    def test_mergeTopologies(self,
+                             mock_path,
+                             shifted_topologies,
+                             merged_undertest1,
+                             expected_merged):
+        for atom in merged_undertest1['atomdata']:
+            assert merged_undertest1['atomdata'][atom] == \
                 pytest.approx(expected_merged['atomdata'][atom])
-        for propert in [prop for prop in test_merged if prop != 'atomdata']:
-            assert test_merged[propert] == expected_merged[propert]
+        for propert in [prop for prop in merged_undertest1
+                        if prop != 'atomdata']:
+            assert merged_undertest1[propert] == expected_merged[propert]
+
+    @pytest.mark.parametrize("topology, result", [
+        (pytest.lazy_fixture('merged_undertest1'),
+         'expected_merged_uadodecane.lammps'),
+        (pytest.lazy_fixture('merged_undertest2'),
+         'expected_merged_cut_uadodecane.lammps'),
+    ])
+    def test_writeTopology(self, mock_path, tmpdir, topology, result):
+        file = tmpdir.join('out.lammps')
+        mdf3.writeTopology(topology, file)
+        expected = open(result, 'r').readlines()
+        assert file.readlines()[1:] == expected[1:]
+
+
+@pytest.mark.parametrize("dictionary, keys, expected", [
+    ({1: {1: [1, 2, 3, 4], 2: [3, 4, 5, 6]},
+      2: {1: [10, 11, 12], 2: [11, 15, 17]},
+      },
+     {1: 'One', 2: 'Two'},
+     '\nOne\n\n1 1 2 3 4\n2 3 4 5 6\n\nTwo\n\n1 10 11 12\n2 11 15 17\n',
+     ),
+    ({1: {1: [1, 2, 3, 4], 2: [3, 4, 5, 6]},
+      2: {}
+      },
+     {1: 'One', 2: 'Two'},
+     '\nOne\n\n1 1 2 3 4\n2 3 4 5 6\n',
+     ),
+])
+def test__getStringBADI(dictionary, keys, expected):
+    assert mdf3._getStringBADI(dictionary, keys) == expected

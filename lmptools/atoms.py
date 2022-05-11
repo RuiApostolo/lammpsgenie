@@ -63,18 +63,12 @@ def getAtomType(filename):
     for lineindex, line in enumerate(lines):
         if "atom types" in line:
             natomtypes = int(line.split()[0])
-            #  print()
-            #  print(f"Found {natomtypes} atom types.")
-            #  print()
             atomnames = {}
         if "Pair Coeffs" in line:
             for i in range(1, natomtypes + 1):
                 matches = re.match(p, lines[lineindex + i + 1].split("#")[1])
                 try:
-                    if matches.group('name') != '':
-                        atomnames[i] = matches.group('name')
-                    else:
-                        atomnames[i] = str(i)
+                    atomnames[i] = matches.group('name')
                 except(AttributeError):
                     atomnames[i] = str(i)
             return atomnames
