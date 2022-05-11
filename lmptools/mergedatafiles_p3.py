@@ -402,14 +402,20 @@ def mergeTopologies(topologies, newboxsize):
             shift_values[None] = None
             for propert in property_pairs:
                 merged_topology[propert] = _mergeDicts(
-                    merged_topology[propert], _shiftList(
+                    merged_topology[propert], _shiftDictOfLists(
                         topologies[topology][propert],
                         shift_values[property_pairs[propert]['key']],
                         shift_values[property_pairs[propert]['listid']],
                         shift_values[property_pairs[propert]['listelements']],
                         molid))
             # atomdata
-            # TODO
+            merged_topology['atomdata'] = _mergeDicts(
+                merged_topology['atomdata'], _shiftDictOfDicts(
+                    topologies[topology]['atomdata'],
+                    shift_values['atoms'],
+                    'type',
+                    shift_values['atom types'],
+                    molid))
             # masses
             merged_topology['masses'] = _mergeDicts(
                 merged_topology['masses'], topologies[topology]['masses'])
@@ -515,7 +521,7 @@ def writeTopology(topology, filename):
                 f.write(" ")
                 f.write(f"{topology['atomdata'][atom]['mol']}")
                 f.write(" ")
-                #  f.write(f"{names[topology['atomdata'][atom]['type']]}")
+                f.write(f"{topology['atomdata'][atom]['type']}")
                 f.write(" ")
                 f.write(f"{topology['atomdata'][atom]['charge']}")
                 f.write(" ")
@@ -525,7 +531,7 @@ def writeTopology(topology, filename):
                 f.write(" ")
                 f.write(f"{topology['atomdata'][atom]['z']}")
                 # atom type str
-                f.write(f" # {topology['atomdata'][atom]['type']}")
+                f.write(f" # {names[topology['atomdata'][atom]['type']]}")
                 f.write("\n")
 
         # Bond/Angle/Dihedral/Improper data
@@ -538,11 +544,11 @@ def _shiftKey(topology_property: dict, shiftkey: int):
     return {k + shiftkey: v for k, v in topology_property.items()}
 
 
-def _shiftList(topology_property,
-               shiftkey,
-               shiftlistid,
-               shiftlistelements,
-               molid):
+def _shiftDictOfLists(topology_property,
+                      shiftkey,
+                      shiftlistid,
+                      shiftlistelements,
+                      molid):
     """
     shifts dict of lists.
     {key + shiftkey:
@@ -551,11 +557,12 @@ def _shiftList(topology_property,
         el + shiftlistelements, etc]}
     """
 
-    if topology_property == 'atomdata':
-        new_topology_property = _shiftKey(topology_property, 'atoms')
-        new_topology_property = _setMolid(new_topology_property, molid)
-        return new_topology_property
-    elif shiftlistid is not None:
+    #  if topology_property == 'atomdata':
+    #      new_topology_property = _shiftKey(topology_property, 'atoms')
+    #      new_topology_property = _shiftKey(new_topology_property, 'types')
+    #      new_topology_property = _setMolid(new_topology_property, molid)
+    #      return new_topology_property
+    if shiftlistid is not None:
         new_topology_property = {}
         for item in topology_property:
             new_list = topology_property[item].copy()
@@ -567,6 +574,34 @@ def _shiftList(topology_property,
         #  for k, v in topology_property.items()}
     else:
         return _shiftKey(topology_property, shiftkey)
+
+
+def _shiftDictOfDicts(topology_property,
+                      shiftkey,
+                      targetinnerkey,
+                      shiftinnervalue,
+                      molid):
+    """
+    shifts dict of lists.
+    {key + shiftkey:
+        {unrelated_key: unrelated_value,
+        targetinnerkey: original_value + shiftinnervalue,
+        unrelated_key: unrelated_value}}
+    """
+
+    new_topology_property = _shiftKey(topology_property, shiftkey)
+    new_topology_property = _setMolid(new_topology_property, molid)
+    new_topology_property = _addToAtomProperty(new_topology_property,
+                                               targetinnerkey,
+                                               shiftinnervalue)
+    return new_topology_property
+
+
+def _addToAtomProperty(topology, propert, value):
+    # adds value to every topology[:][propert]
+    for atom in topology:
+        topology[atom][propert] += value
+    return topology
 
 
 def _setMolid(topology, molid):
