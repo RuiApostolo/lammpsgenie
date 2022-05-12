@@ -1,0 +1,50 @@
+package require topotools
+package require pbctools
+set name "ethynol"
+mol new $name.xyz
+topo guess type element
+# Setting properties
+# CHE
+set selCHE [atomselect top "serial 1"]
+$selCHE set element C
+$selCHE set charge -0.21
+$selCHE set type CHE
+$selCHE set mass 12.011
+# COE
+set selCOE [atomselect top "serial 2"]
+$selCOE set element C
+$selCOE set charge 0.275
+$selCOE set type COE
+$selCOE set mass 12.011
+# OHE
+set selOHE [atomselect top "serial 3"]
+$selOHE set element O
+$selOHE set charge -0.683
+$selOHE set type OHE
+$selOHE set mass 15.999
+# HCE
+set selHCE [atomselect top "serial 4"]
+$selHCE set element H
+$selHCE set charge 0.2
+$selHCE set type HCE
+$selHCE set mass 1.008
+# HOE
+set selHOE [atomselect top "serial 5"]
+$selHOE set element H
+$selHOE set charge 0.418
+$selHOE set type HOE
+$selHOE set mass 1.008
+
+# set pbc box
+pbc set {5.0 5.0 5.0}
+pbc box -center com
+
+# Guessing bonds, angles, dihedrals
+topo guessbonds
+topo bondsrecalc all
+topo retypebonds
+topo guessangles
+topo guessdihedrals
+topo guessimpropers
+topo writelammpsdata $name.lammps
+exit

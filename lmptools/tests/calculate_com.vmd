@@ -1,0 +1,19 @@
+# set dump file name
+set ifile "dump.uadodecane.lammpstrj"
+# set outputfile name
+set ofile [open "com.dat" w]
+# read dumpfile
+mol new $ifile step 1 waitfor all autobonds off
+# set masses
+# 1 - SCP - 15.035
+# 2 - SCS - 14.027
+[atomselect top {name 1}] set mass 15.035
+[atomselect top {name 2}] set mass 14.027
+# find number of frames
+set numframes [molinfo top get numframes]
+# measure centre of mass
+for {set i 0} {$i < $numframes} {incr i} {
+  set com [measure center [atomselect top all frame $i] weight mass]
+  puts $ofile $com
+}
+exit
