@@ -127,6 +127,21 @@ precision = 2
 The [numpy styleguide] was followed for DocString documentation.
 
 
+## Release
+
+Install required packages with:
+
+```
+pip install build twine
+```
+
+1. Modify code
+2. Assure tests pass, and cover 100% of the code.
+3. Modify version in `_version.py`
+4. Create a build with `python3 -m build --sdist` and `python3 -m build --wheel`.
+5. Check that the distribution files pass checks with `twine check dist/*`
+6. Upload to PyPi with
+
 
 
 [numpy styleguide]: https://numpydoc.readthedocs.io/en/latest/format.html

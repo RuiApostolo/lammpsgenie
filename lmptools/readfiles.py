@@ -1,7 +1,12 @@
-"""
-Functions that read files.
-"""
 import gzip
+"""
+Functions to read from files
+"""
+
+__all__ = [
+    'readAll',
+    'readAllGzip',
+]
 
 
 def readAll(filename):

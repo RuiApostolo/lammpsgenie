@@ -10,6 +10,23 @@ from os.path import basename
 import operator
 
 
+"""
+Functions and script required to merge LAMMPS data diles.
+"""
+
+__all__ = [
+    'readInputFile',
+    'readTopology',
+    'readTopologies',
+    'limitsTopology',
+    'limitsAllTopologies',
+    'absoluteLimitsTopologies',
+    'shiftTopology',
+    'shiftTopologies',
+    'mergeTopologies',
+    'writeTopology',
+]
+
 coeffs_equiv = {
     'Pair Coeffs': 'pairtypes',
     'Bond Coeffs': 'bondtypes',
@@ -544,6 +561,11 @@ def writeTopology(topology, filename):
         f.write(_getStringBADI(topology, badis))
 
     return
+
+
+###############################################################################
+#                             Protected Functions                             #
+###############################################################################
 
 
 def _getStringBADI(topology, badis):

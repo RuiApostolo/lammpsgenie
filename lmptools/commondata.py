@@ -1,9 +1,16 @@
-########
-# module containing commonly used data reading and analysis tools
-# Author: Rui Apóstolo
-# email: ruiapostolo@gmail.com
-# Inspired by previous work by Michael Doig
-from .atoms import getNatoms
+from lmptools.atoms import getNatoms
+
+
+"""
+Core functions.
+"""
+
+
+__all__ = [
+    'getDumpTSRange',
+    'readTS',
+    'getTrajTSRange',
+]
 
 
 def getDumpTSRange(lines):

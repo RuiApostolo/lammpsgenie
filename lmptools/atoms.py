@@ -1,6 +1,22 @@
-import re
 import lmptools.readfiles as rdfl
+from re import compile, match
 from collections import defaultdict
+
+"""
+Function that get atomic information from already loaded data and dump files.
+"""
+
+
+__all__ = [
+    'getNatoms',
+    'getAtomType',
+    'getAtomData',
+    'getAllAtomData',
+    'getAtomRange',
+    'getAtomsByType',
+    'getTotalMass',
+    'getCOM',
+]
 
 
 g_coeffs = {'Pair Coeffs': 'atom types',
@@ -56,7 +72,7 @@ def getAtomType(filename):
         {1: 'CPS', 2: 'OCB'}
     """
 
-    p = re.compile(r"(\s*\d*\s*)(?P<name>\w+)(\s*\w*)")
+    p = compile(r"(\s*\d*\s*)(?P<name>\w+)(\s*\w*)")
     with open(filename, "r") as datafile:
         lines = datafile.read().splitlines()
     for lineindex, line in enumerate(lines):
@@ -65,7 +81,7 @@ def getAtomType(filename):
             atomnames = {}
         if "Pair Coeffs" in line:
             for i in range(1, natomtypes + 1):
-                matches = re.match(p, lines[lineindex + i + 1].split("#")[1])
+                matches = match(p, lines[lineindex + i + 1].split("#")[1])
                 try:
                     atomnames[i] = matches.group('name')
                 except(AttributeError):
