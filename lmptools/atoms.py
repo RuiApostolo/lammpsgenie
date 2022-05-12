@@ -3,7 +3,6 @@ import lmptools.readfiles as rdfl
 from collections import defaultdict
 
 
-# TODO: either move back, or make everything like this
 g_coeffs = {'Pair Coeffs': 'atom types',
             'Bond Coeffs': 'bond types',
             'Angle Coeffs': 'angle types',

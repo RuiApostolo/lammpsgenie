@@ -82,13 +82,11 @@ def readInputFile(args):
             return _openYaml(filename)
 
     except MissingSettingsFile as exception:
-        # TODO expand instructions
         message = "Missing settings file: merge.yaml or merge.yml"
         print(message)
         raise MissingSettingsFile(message) from exception
 
     except TooManyArguments as exception:
-        # TODO expand instructions
         message = "This script takes only one argument, the settings file."
         print(message)
         raise MissingSettingsFile(message) from exception
@@ -470,7 +468,8 @@ def writeTopology(topology, filename):
             f.write(f"{topology['topologycounts'][propert]} {propert}\n")
         # Box size
         box = topology['boxsize']
-        for low, high in zip(list(box.keys())[::2], list(box.keys())[1::2]):
+        box_order = ['xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi']
+        for low, high in zip(box_order[::2], box_order[1::2]):
             f.write(f"{box[low]} {box[high]} {low} {high}\n")
 
         # Pair/Bond/Angle/Dihedral/Improper Coeffs
@@ -681,7 +680,8 @@ def _limit(function, coordinate, topology):
             topology['atomdata'][atom][coordinate])][coordinate]
 
 
-if __name__ == '__main__':  # pragma: no cover
+def main(args=argv):
+    print("")
     inputs, outputsettings = readInputFile(args)
     # read files
     topologies = readTopologies(inputs)
@@ -694,4 +694,5 @@ if __name__ == '__main__':  # pragma: no cover
         new_topologies, outputsettings['boxsize'])
     # write merged topology to datafile
     writeTopology(merged_topology, outputsettings['filename'])
-    # TODO: consider pytest-console-scripts tests
+    print("File created Successfully")
+    print("")

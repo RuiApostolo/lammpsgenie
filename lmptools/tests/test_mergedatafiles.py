@@ -112,9 +112,6 @@ def test_readInputFile_fail(testargs, message):
 
 
 class TestSettings:
-    @pytest.fixture
-    def mock_path(self, monkeypatch):
-        monkeypatch.chdir("tests")
 
     ref_minmax = {
         # each line: x_min, y_min, z_min, x_max, y_max, z_max
@@ -271,7 +268,8 @@ class TestMerge(TestTopologies):
     def test_writeTopology(self, mock_path, tmpdir, topology, result):
         file = tmpdir.join('out.lammps')
         mdf3.writeTopology(topology, file)
-        expected = open(result, 'r').readlines()
+        with open(result, 'r') as f:
+            expected = f.readlines()
         assert file.readlines()[1:] == expected[1:]
 
 

@@ -8,6 +8,11 @@ def emptylist():
     return []
 
 
+@pytest.fixture
+def mock_path(monkeypatch):
+    monkeypatch.chdir("tests")
+
+
 #  @pytest.fixture
 #  def base_path() -> Path:
 #      """Get the current folder of the test"""

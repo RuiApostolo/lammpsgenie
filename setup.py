@@ -27,5 +27,8 @@ setuptools.setup(
     install_requires=[
         "PyYAML<=5.3.1"
     ],
-    scripts=['lmptools/mergedatafiles_p3.py'],
+    #  scripts=['lmptools/mergedatafiles_p3.py'],
+    entry_points={
+        'console_scripts': ['mergedatafiles=lmptools.mergedatafiles_p3:main'],
+    }
 )
