@@ -1,5 +1,5 @@
 from yaml import full_load, dump
-import lmptools.mergedatafiles_p3 as mdf3
+import lmptools.mergedatafiles as mdf
 
 
 def modified_settings(orig_file, new_path):
@@ -17,7 +17,7 @@ def test_mergedatafiles_script(mock_path, tmp_path):
         dump(modified_settings('merge.yaml', out_file), settings_file)
 
     args = ['mergedatafiles_p3.py', str(settings_name)]
-    mdf3.main(args)
+    mdf.main(args)
     with open('expected_merged_uadodecane.lammps', 'r') as f:
         expected = f.readlines()
     with open(out_file, 'r') as f:

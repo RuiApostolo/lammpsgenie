@@ -1,5 +1,5 @@
 import pytest
-import lmptools.mergedatafiles_p3 as mdf3
+import lmptools.mergedatafiles as mdf
 from conftest import zipRefs
 from copy import deepcopy
 
@@ -40,7 +40,7 @@ ref_mergeYamlAll = {
     ])
 def test__strToFunction(test_dict, message):
     with pytest.raises(ValueError) as excinfo:
-        mdf3._strToFunction(test_dict)
+        mdf._strToFunction(test_dict)
     assert message in str(excinfo.value)
 
 
@@ -63,7 +63,7 @@ def test__strToFunction(test_dict, message):
      1),
 ])
 def test__shiftKey(start, expected, count):
-    assert mdf3._shiftKey(start, count) == expected
+    assert mdf._shiftKey(start, count) == expected
 
 
 @pytest.mark.parametrize("dict_a, dict_b, expected", [
@@ -78,7 +78,7 @@ def test__shiftKey(start, expected, count):
      {'atoms': 34, 'bonds': 71, 'angles': 35, 'dihedrals': 46}),
 ])
 def test__combineDicts(dict_a, dict_b, expected):
-    assert mdf3._combineDicts(dict_a, dict_b) == expected
+    assert mdf._combineDicts(dict_a, dict_b) == expected
 
 
 @pytest.mark.parametrize("dict_a, dict_b, expected", [
@@ -87,7 +87,7 @@ def test__combineDicts(dict_a, dict_b, expected):
      {'atoms': 10, 'bonds': 20, 'angles': 30, 'dihedrals': 40}),
 ])
 def test__mergeDictsPass(dict_a, dict_b, expected):
-    assert mdf3._mergeDicts(dict_a, dict_b) == expected
+    assert mdf._mergeDicts(dict_a, dict_b) == expected
 
 
 @pytest.mark.parametrize("dict_a, dict_b, message", [
@@ -96,8 +96,8 @@ def test__mergeDictsPass(dict_a, dict_b, expected):
      'bonds')
 ])
 def test__mergeDictsRaise(dict_a, dict_b, message):
-    with pytest.raises(mdf3.ValueExists) as excinfo:
-        mdf3._mergeDicts(dict_a, dict_b)
+    with pytest.raises(mdf.ValueExists) as excinfo:
+        mdf._mergeDicts(dict_a, dict_b)
     assert message in str(excinfo.value)
 
 
@@ -106,8 +106,8 @@ def test__mergeDictsRaise(dict_a, dict_b, message):
     (["mergedatafile_p3.py", "merge2.yaml", "mistake"], 'This script'),
     ])
 def test_readInputFile_fail(testargs, message):
-    with pytest.raises(mdf3.MissingSettingsFile) as excinfo:
-        mdf3.readInputFile(testargs)
+    with pytest.raises(mdf.MissingSettingsFile) as excinfo:
+        mdf.readInputFile(testargs)
     assert message in str(excinfo.value)
 
 
@@ -144,7 +144,7 @@ class TestSettings:
         return result
 
     def test__openYaml(self, mock_path):
-        assert mdf3._openYaml("merge.yaml") == \
+        assert mdf._openYaml("merge.yaml") == \
             (ref_mergeYamlIn, ref_mergeYamlOut)
 
     @pytest.mark.parametrize("args", [
@@ -155,7 +155,7 @@ class TestSettings:
     def test_readInputFile_success(self,
                                    mock_path,
                                    args):
-        settings, outputfile = mdf3.readInputFile(args)
+        settings, outputfile = mdf.readInputFile(args)
         assert settings == ref_mergeYamlIn
         assert outputfile == ref_mergeYamlOut
 
@@ -167,15 +167,15 @@ class TestSettings:
                     file,
                     function,
                     coordinate):
-        topology = mdf3.readTopology(file[0])
-        assert mdf3._limit(function, coordinate, topology) == pytest.approx(
+        topology = mdf.readTopology(file[0])
+        assert mdf._limit(function, coordinate, topology) == pytest.approx(
             self.ref_minmax[file[0]][function][coordinate])
 
 
 class TestTopologies(TestSettings):
     @pytest.fixture
     def topologies(self):
-        return mdf3.readTopologies(ref_mergeYamlIn)
+        return mdf.readTopologies(ref_mergeYamlIn)
 
     ref_limits = {min: {
                     'x': 0.303,
@@ -206,28 +206,28 @@ class TestTopologies(TestSettings):
         assert len(topologies) == 3
 
     def test_limitsAllTopologies(self, mock_path, topologies):
-        assert mdf3.limitsAllTopologies(topologies) == \
+        assert mdf.limitsAllTopologies(topologies) == \
             self.approx_double_nested_dict(self.ref_minmax)
 
     def test_AbsoluteLimitsTopologies(self, mock_path, topologies):
-        assert mdf3.absoluteLimitsTopologies(topologies) == \
+        assert mdf.absoluteLimitsTopologies(topologies) == \
             self.approx_nested_dict(self.ref_limits)
 
 
 class TestMerge(TestTopologies):
     @pytest.fixture
     def shifted_topologies(self, topologies):
-        return mdf3.shiftTopologies(topologies,
-                                    self.ref_minmax,
-                                    ref_mergeYamlIn)
+        return mdf.shiftTopologies(topologies,
+                                   self.ref_minmax,
+                                   ref_mergeYamlIn)
 
     @pytest.fixture
     def expected_merged(self):
-        return mdf3.readTopology('expected_merged_uadodecane.lammps')
+        return mdf.readTopology('expected_merged_uadodecane.lammps')
 
     @pytest.fixture
     def merged_undertest1(self, shifted_topologies):
-        return mdf3.mergeTopologies(
+        return mdf.mergeTopologies(
             shifted_topologies, ref_mergeYamlOut['boxsize'])
 
     @pytest.fixture
@@ -244,7 +244,7 @@ class TestMerge(TestTopologies):
                                  mock_path,
                                  topologies,
                                  shifted_topologies):
-        assert mdf3.limitsAllTopologies(shifted_topologies) == \
+        assert mdf.limitsAllTopologies(shifted_topologies) == \
             self.approx_double_nested_dict(self.ref_newminmax)
 
     def test_mergeTopologies(self,
@@ -267,7 +267,7 @@ class TestMerge(TestTopologies):
     ])
     def test_writeTopology(self, mock_path, tmpdir, topology, result):
         file = tmpdir.join('out.lammps')
-        mdf3.writeTopology(topology, file)
+        mdf.writeTopology(topology, file)
         with open(result, 'r') as f:
             expected = f.readlines()
         assert file.readlines()[1:] == expected[1:]
@@ -288,4 +288,4 @@ class TestMerge(TestTopologies):
      ),
 ])
 def test__getStringBADI(dictionary, keys, expected):
-    assert mdf3._getStringBADI(dictionary, keys) == expected
+    assert mdf._getStringBADI(dictionary, keys) == expected

@@ -1,7 +1,7 @@
 import pytest
 from conftest import zipRefs, ref_data_files, ref_data_files_large
 import lmptools.atoms as atoms
-import lmptools.commondata_p3 as cdp3
+import lmptools.commondata as cdt
 
 
 @pytest.mark.parametrize("dumpfile, natoms", [
@@ -10,7 +10,7 @@ import lmptools.commondata_p3 as cdp3
     ('emptylist', None),
     ])
 def test_getNatoms_fromDummy(dumpfile, natoms, request):
-    assert cdp3.getNatoms(request.getfixturevalue(dumpfile)) == natoms
+    assert cdt.getNatoms(request.getfixturevalue(dumpfile)) == natoms
 
 
 class TestAtomDataLarge:
@@ -482,11 +482,11 @@ class TestRanges:
         ("tests/uadodecane.data", 34068),
     ])
 def test_getTotalMass(dumpfilelines, datafile, result):
-    traj = cdp3.readTS(dumpfilelines,
-                       1,
-                       atoms.getAtomType(datafile),
-                       9
-                       )
+    traj = cdt.readTS(dumpfilelines,
+                      1,
+                      atoms.getAtomType(datafile),
+                      9
+                      )
     masses = atoms.getAtomData(datafile)['masses']
     assert atoms.getTotalMass(traj, masses) == pytest.approx(result)
 
@@ -535,7 +535,7 @@ def test_getCOM(dumpfilelines,
                 result):
     traj = {}
     for idx, frame in enumerate(tsnamerange):
-        traj[frame] = cdp3.readTS(
+        traj[frame] = cdt.readTS(
                         dumpfilelines,
                         idx + 1,
                         atoms.getAtomType("tests/uadodecane.data"),

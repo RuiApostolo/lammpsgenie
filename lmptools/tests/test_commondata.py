@@ -1,10 +1,10 @@
 import pytest
-import lmptools.commondata_p3 as cdp3
+import lmptools.commondata as cdt
 import lmptools.atoms as atoms
 
 
 def test_getDumpTSRange_fromDummy(dummy_dump):
-    assert cdp3.getDumpTSRange(dummy_dump) == [1000000, 2000000]
+    assert cdt.getDumpTSRange(dummy_dump) == [1000000, 2000000]
 
 
 @pytest.mark.parametrize(
@@ -12,7 +12,7 @@ def test_getDumpTSRange_fromDummy(dummy_dump):
      [10000, 20000, 30000, 40000, 50000, 60000]
      ])
 def test_getDumpTSRange_fromFile(dumpfilelines, timesteps):
-    assert cdp3.getDumpTSRange(dumpfilelines) == timesteps
+    assert cdt.getDumpTSRange(dumpfilelines) == timesteps
 
 
 @pytest.mark.parametrize(
@@ -101,12 +101,12 @@ def test_readTS_fromFile(dumpfilelines,
                          atomnumber,
                          boxsize,
                          properties):
-    traj = cdp3.readTS(dumpfilelines,
-                       framenumber,
-                       atoms.getAtomType("tests/uadodecane.data"),
-                       9
-                       )
-    frame = cdp3.getDumpTSRange(dumpfilelines)[framenumber-1]
+    traj = cdt.readTS(dumpfilelines,
+                      framenumber,
+                      atoms.getAtomType("tests/uadodecane.data"),
+                      9
+                      )
+    frame = cdt.getDumpTSRange(dumpfilelines)[framenumber-1]
     assert len(traj.keys()) == 1
     assert len(traj[frame]['atom'].keys()) == 2400
     assert traj[frame]['boxsize'] == boxsize
@@ -130,11 +130,11 @@ def test_getTrajTSRange(dumpfilelines,
                         numberframes):
     traj = {}
     for frame in range(1, 6 + 1):
-        traj[frame] = cdp3.readTS(
+        traj[frame] = cdt.readTS(
                           dumpfilelines,
                           frame,
                           atoms.getAtomType("tests/uadodecane.data"),
                           9
                           )
-    slice_traj = cdp3.getTrajTSRange(traj, start, stop)
+    slice_traj = cdt.getTrajTSRange(traj, start, stop)
     assert len(slice_traj) == numberframes

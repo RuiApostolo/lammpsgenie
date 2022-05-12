@@ -1,11 +1,19 @@
-import setuptools
+from setuptools import setup, find_packages
+from distutils.util import convert_path
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+
+main_ns = {}
+ver_path = convert_path("lmptools/_version.py")
+with open(ver_path) as ver_file:
+    exec(ver_file.read(), main_ns)
+
+
+setup(
     name="lmptools",
-    version="0.1.0",
+    version=main_ns['__version__'],
     author="Rui Apóstolo",
     author_email="ruiapostolo@gmail.com",
     description="A package to help with LAMMPS data and dump files",
@@ -22,13 +30,12 @@ setuptools.setup(
         "Operating System :: Unix"
         ],
     package_dir={"": "lmptools"},
-    packages=setuptools.find_packages(where="lmptools"),
+    packages=find_packages(where="lmptools"),
     python_requires=">=3.6",
     install_requires=[
-        "PyYAML<=5.3.1"
+        "PyYAML>=5.3.1"
     ],
-    #  scripts=['lmptools/mergedatafiles_p3.py'],
     entry_points={
-        'console_scripts': ['mergedatafiles=lmptools.mergedatafiles_p3:main'],
+        'console_scripts': ['mergedatafiles=lmptools.mergedatafiles:main'],
     }
 )

@@ -1,826 +1,698 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov  3 11:35:19 2014
-@author: Michael Doig
-Modified on Tue 31 Mar 16:14:49 BST 2020
-@author: Rui Apóstolo
-"""
-
-# Program to combine data files - in order for this to work all data files
-# should have existing force field parameters present. While this could lead to
-# duplicates, it is much easier and more efficient to code
-
-# usage: python combineDatafiles.py -n 3 data1 min/max z data2 min/max z data3 min/maxz -o data.combined.out
-# where -n # is the number of data files
-"""
-sysargv[0] : python program name (combineDatafiles.py)
-sysargv[1] : -n
-sysargv[2] : data1
-sysargv[3] : min/max
-sysargv[4] : #
-sysargv[5] : data2
-sysargv[6] : min/max
-sysargv[7] : #
-...
-sysargv[] : -o
-sysargv[] : outputfilename
-
-"""
-"""
-Steps:
-1) Read in all data files
-
-"""
-
-import gzip
-import math
-import sys
-import random
-from commondata import readAll, getNatoms, readTS, getTSrange, getAtomType, getAtomData
-from commondata import getTS, getAt, getMol, getTotMass, getCOMts, readcombmasses, readAllGzip
-from commondata import getAllAtomData
-from itertools import islice
-import subprocess
-
-try:
-    temp = sys.argv[1]
-except BaseException:
-    print "Program usage: python mergedatafiles-newdatafile.py -n 3 data1 min/max z data2 min/max z data3 min/maxz -o data.combined.out (where -n # is the number of data files)"
-    sys.exit(-1)
+#!/bin/env python3
+import lmptools.atoms as atoms
+from lmptools._version import __version__
+from lmptools._name import _name
+from yaml import full_load
+from sys import argv
+from copy import deepcopy
+from datetime import datetime
+from os.path import basename
+import operator
 
 
-numdatafiles = int(sys.argv[2])
-readsyntax = {}
-datafile = {}
-outputdata = {}
-for i in range(1, numdatafiles+1):
-    print i
-    readsyntax[i] = {}
-    readsyntax[i]['name'] = {}
-    readsyntax[i]['name'] = sys.argv[(3*i)]
-    readsyntax[i]['maxmin'] = sys.argv[(3*i+1)]
-    readsyntax[i]['shift'] = float(sys.argv[(3*i + 2)])
-    datafile[i] = {}
-    datafile[i]['atomdata'] = {}
-    datafile[i]['bonddata'] = {}
-    datafile[i]['angledata'] = {}
-    datafile[i]['dhdata'] = {}
-    datafile[i]['impdata'] = {}
-    datafile[i]['masses'] = {}
-    datafile[i]['boxsize'] = {}
-    datafile[i]['numdata'] = {}
-    datafile[i]['paircoeff'] = {}
-outputfile = sys.argv[(3*i + 4)]
+coeffs_equiv = {
+    'Pair Coeffs': 'pairtypes',
+    'Bond Coeffs': 'bondtypes',
+    'Angle Coeffs': 'angletypes',
+    'Dihedral Coeffs': 'dihedraltypes',
+    'Improper Coeffs': 'impropertypes',
+    }
 
 
-#fndump = "dump.prod.all.lammpstrj"
-#fndata = "datafile"
+class MissingSettingsFile(IOError):
+    pass
 
-header = 9
 
-zmax = {}
-zmin = {}
+class TooManyArguments(IOError):
+    pass
 
-for i in range(1, numdatafiles+1):
-    zlist = []
-    zmax[i] = {}
-    zmin[i] = {}
-    fndata = readsyntax[i]['name']
-    print "Data file "+str(fndata)
-    atomnames = getAtomType(fndata)
-    print atomnames
-    atomdata, bonddata, angledata, dhdata, impdata, masses, boxsize, numdata, paircoeff, bondcoeff, anglecoeff, dhcoeff, impcoeff = getAllAtomData(
-        fndata, atomnames)
-    datafile[i]['atomdata'] = atomdata
-    datafile[i]['bonddata'] = bonddata
-    datafile[i]['angledata'] = angledata
-    datafile[i]['dhdata'] = dhdata
-    datafile[i]['impdata'] = impdata
-    datafile[i]['masses'] = masses
-    datafile[i]['boxsize'] = boxsize
-    datafile[i]['numdata'] = numdata
-    datafile[i]['paircoeff'] = paircoeff
-    datafile[i]['bondcoeff'] = bondcoeff
-    datafile[i]['anglecoeff'] = anglecoeff
-    datafile[i]['dhcoeff'] = dhcoeff
-    datafile[i]['impcoeff'] = impcoeff
 
-    a = datafile[i]['atomdata'].keys()
-    for j in a:
-        zlist.append(float(datafile[i]['atomdata'][j]['z']))
+class ValueExists(ValueError):
+    pass
 
+
+args = argv
+_this_file = basename(__file__)
+
+
+def readInputFile(args):
     """
-    SHIFT COORDINATES BASED ON MAX/MIN
+    Reads settings file.
+
+    Parameters
+    ----------
+    args : list of str
+        Command-line arguments passed. Accepts name of YAML settings file
+        or None. If None, it will search the execution directory for
+        'merge.yaml' and 'merge.yml' and use the first one it finds.
+
+    Returns
+    -------
+    settings : dict of dicts
+        Each dict should contain:
+        'filename' :
+            'minormax': function
+            'value': float
+
+    Raises
+    ------
+    MissingSettingFile
+        If passed no settings file name, and the defaults aren't found.
+
+    TooManyArguments
+        If passed more arguments than required.
     """
-    if readsyntax[i]['maxmin'] == "max":
-        zmax[i] = max(zlist)
-        if zmax[i] > readsyntax[i]['shift']:
-            for k in a:
-                atomdata[k]['z'] -= (zmax[i] - readsyntax[i]['shift'])
-    if readsyntax[i]['maxmin'] == "min":
-        zmin[i] = min(zlist)
-        if zmin[i] < readsyntax[i]['shift']:
-            for k in a:
-                atomdata[k]['z'] += (readsyntax[i]['shift'] - zmin[i])
 
-##########################################################################
+    # trims name of file run (argv[0])
+    args = args[1:]
+    try:
+        if len(args) < 1:
+            for filename in ['merge.yaml', 'merge.yml']:
+                try:
+                    return _openYaml(filename)
 
+                except IOError:
+                    continue
+            else:
+                raise MissingSettingsFile
+        elif len(args) > 1:
+            raise TooManyArguments
+        else:
+            filename = args[0]
+            return _openYaml(filename)
 
-##########################################################################
-# MERGING FILES
-# CALCULATE RENUMBERING
-# #######################################################################################
-outdatafile = {}
-outdatafile['atomdata'] = {}
-outdatafile['bonddata'] = {}
-outdatafile['angledata'] = {}
-outdatafile['dhdata'] = {}
-outdatafile['impdata'] = {}
-outdatafile['masses'] = {}
-outdatafile['boxsize'] = {}
-outdatafile['numdata'] = {}
+    except MissingSettingsFile as exception:
+        message = "Missing settings file: merge.yaml or merge.yml"
+        print(message)
+        raise MissingSettingsFile(message) from exception
 
-atshift = 0
-bshift = 0
-angshift = 0
-dhshift = 0
-impshift = 0
-attypeshift = 0
-btypeshift = 0
-angtypeshift = 0
-dhtypeshift = 0
-imptypeshift = 0
-
-molshift = {}
-moleshift = 0
-
-for i in range(1, numdatafiles+1):
-    molshift[i] = {}
-    mollist = []
-    # print "MOLLIST - EMPTY:"
-    # print mollist
-    l_atoms = []
-    l_atoms = datafile[i]['atomdata'].keys()
-    for b in l_atoms:
-        mollist.append(datafile[i]['atomdata'][b]['mol'])
-    molshift[i] = max(mollist)
-    # print "MAX: MOL LIST"+str(molshift[i])
+    except TooManyArguments as exception:
+        message = "This script takes only one argument, the settings file."
+        print(message)
+        raise MissingSettingsFile(message) from exception
 
 
-for i in range(1, numdatafiles+1):
-    if i == 1:
-        outdatafile['atomdata'] = datafile[i]['atomdata']
-        newdatafile = {}
-        newdatafile[i] = {}
-        newdatafile[i] = datafile[i]
+def readTopology(file):
+    """
+    Reads Topology from settings dict.
 
+    Parameters
+    ----------
+    file : dict
+        Name of the datafile to be read.
+
+    Returns
+    -------
+    topology : dict
+        Dictionary in the style of atoms.getAllAtomData()
+    """
+
+    return atoms.getAllAtomData(file)
+
+
+def readTopologies(settings):
+    """
+    Reads Topology from settings dict.
+
+    Parameters
+    ----------
+    settings : list of dicts
+        Settings, from readInputFile().
+
+    Returns
+    -------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+    """
+
+    topologies = {}
+    for filename in settings:
+        topologies[filename] = readTopology(filename)
+    return topologies
+
+
+def limitsTopology(topology):
+    """
+    Finds the min and max values of the coordinate of a topology file.
+
+    Parameters
+    ----------
+    topology : nested dicts
+        dictionary of the form:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    Returns
+    -------
+    limits : dict
+        Takes the form:
+        {min: {'x': float, 'y': float, 'z': float},
+         max: {'x': float, 'y': float, 'z': float}}
+
+    Notes
+    -----
+    Uses the actual functions min() and max() and not str.
+    """
+
+    limits = {min: {}, max: {}}
+    coords = ['x', 'y', 'z']
+    for limit in limits:
+        for coord in coords:
+            limits[limit][coord] = _limit(limit, coord, topology)
+    return limits
+
+
+def limitsAllTopologies(topologies):
+    """
+    Finds the min and max values of each coordinate for each topology file.
+
+    Parameters
+    ----------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    Returns
+    -------
+    limits : nested dict
+        Each entry takes the form:
+        filename: {
+            min: {'x': float, 'y': float, 'z': float},
+            max: {'x': float, 'y': float, 'z': float}
+                   }
+
+    Notes
+    -----
+    Uses the actual functions min() and max() and not str.
+    """
+
+    all_limits = {}
+    for topology in topologies:
+        all_limits[topology] = limitsTopology(topologies[topology])
+    return all_limits
+
+
+def absoluteLimitsTopologies(topologies):
+    """
+    Finds the min and max values of each coordinate for a series of topologies.
+    Does not save which topology each value originated from.
+
+    Parameters
+    ----------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    Returns
+    -------
+    limits : dict
+        Takes the form:
+        {min: {'x': float, 'y': float, 'z': float},
+         max: {'x': float, 'y': float, 'z': float}}
+
+    Notes
+    -----
+    Uses the actual functions min() and max() and not str.
+    """
+
+    limits = {min: {'x': float("+inf"),
+                    'y': float("+inf"),
+                    'z': float("+inf")},
+              max: {'x': float("-inf"),
+                    'y': float("-inf"),
+                    'z': float("-inf")}}
+    for topology in topologies:
+        this_topology_limits = limitsTopology(topologies[topology])
+        for limit in this_topology_limits:
+            for coord in this_topology_limits[limit]:
+                limits[limit][coord] = \
+                    limit(limits[limit][coord],
+                          this_topology_limits[limit][coord])
+    return limits
+
+
+def shiftTopology(topology, limits, settings, axis='z'):
+    """
+    Moves the coordinates of the topology file to the min/max along a given
+    axis, as chosen in the settings file.
+
+    Parameters
+    ----------
+    topology : nested dicts
+        dictionary of the form:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    limits : dict
+        Takes the form:
+        {min: {'x': float, 'y': float, 'z': float},
+         max: {'x': float, 'y': float, 'z': float}}
+
+    settings : dict
+        Each dict should contain:
+        'filename' :
+            'minormax': function
+            'value': float
+
+    axis : {'z', 'x', 'y'}
+        The axis along which to apply the coordinate shift.
+
+    Returns
+    -------
+    topology : nested dicts
+        Dictionary in the style of atoms.getAllAtomData(), with shifted
+        coordinates.
+    """
+
+    # copy dictionary. d1 = d2.copy() creates only a pointer
+    new_topology = deepcopy(topology)
+    # what to add to current coordinates
+    # 'value' - min/max(minimum_coord, maximum_coord)
+    delta = settings['value'] - \
+        settings['minormax'](limits[min][axis], limits[max][axis])
+    for atom in new_topology['atomdata']:
+        new_topology['atomdata'][atom][axis] += delta
+    return new_topology
+
+
+def shiftTopologies(topologies, limits, settings, axis='z'):
+    """
+    Moves the coordinates of the topology file to the min/max along a given
+    axis, as chosen in the settings file.
+
+    Parameters
+    ----------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    limits : nested dict
+        Each entry takes the form:
+        filename: {
+            min: {'x': float, 'y': float, 'z': float},
+            max: {'x': float, 'y': float, 'z': float}
+                   }
+
+    settings : dict of dicts
+        Each dict should contain:
+        'filename' :
+            'minormax': function
+            'value': float
+
+    axis : {'z', 'x', 'y'}
+        The axis along which to apply the coordinate shift.
+
+    Returns
+    -------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+    """
+
+    new_topologies = {}
+    for topology in topologies:
+        new_topologies[topology] = shiftTopology(
+                                    topologies[topology],
+                                    limits[topology],
+                                    settings[topology],
+                                    axis)
+    return new_topologies
+
+
+def mergeTopologies(topologies, newboxsize):
+    """
+    Merges a dictionary containing several topologies into one single
+    topology.
+
+    Parameters
+    ----------
+    topologies : nested dicts
+        Each top level entry has the shape:
+        'filename': Dictionary in the style of atoms.getAllAtomData()
+
+    newboxsize : dict
+        New simulation box size, intended to be read from settings file.
+        The dictionary takes the form:
+        coordinate (str) : float
+        where coordinate is can take the values:
+        'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
+        in accordance with LAMMPS data file syntax.
+
+    Returns
+    -------
+    topology : nested dicts
+        New, merged topology. Dictionary in the style of
+        atoms.getAllAtomData().
+    """
+
+    merged_topology = {}
+    property_pairs = {
+        'atomnames':
+            {'key': 'atom types',
+             'listid': None,
+             'listelements': None},
+        'pairtypes':
+            {'key': 'atom types',
+             'listid': None,
+             'listelements': None},
+        'bondtypes':
+            {'key': 'bond types',
+             'listid': None,
+             'listelements': None},
+        'angletypes':
+            {'key': 'angle types',
+             'listid': None,
+             'listelements': None},
+        'dihedraltypes':
+            {'key': 'dihedral types',
+             'listid': None,
+             'listelements': None},
+        'impropertypes':
+            {'key': 'improper types',
+             'listid': None,
+             'listelements': None},
+        'bonddata':
+            {'key': 'bonds',
+             'listid': 'bond types',
+             'listelements': 'atoms'},
+        'angledata':
+            {'key': 'angles',
+             'listid': 'angle types',
+             'listelements': 'atoms'},
+        'dihedraldata':
+            {'key': 'dihedrals',
+             'listid': 'dihedral types',
+             'listelements': 'atoms'},
+        'improperdata':
+            {'key': 'impropers',
+             'listid': 'improper types',
+             'listelements': 'atoms'},
+    }
+    molid = 1
+    for topology in topologies:
+        # no changes on first topology
+        if len(merged_topology) == 0:
+            merged_topology = deepcopy(topologies[topology])
+            # reset molid just in case
+            merged_topology['atomdata'] = _setMolid(
+                merged_topology['atomdata'], molid)
+        else:
+            shift_values = merged_topology['topologycounts']
+            shift_values[None] = None
+            for propert in property_pairs:
+                merged_topology[propert] = _mergeDicts(
+                    merged_topology[propert], _shiftDictOfLists(
+                        topologies[topology][propert],
+                        shift_values[property_pairs[propert]['key']],
+                        shift_values[property_pairs[propert]['listid']],
+                        shift_values[property_pairs[propert]['listelements']],
+                        molid))
+            # atomdata
+            merged_topology['atomdata'] = _mergeDicts(
+                merged_topology['atomdata'], _shiftDictOfDicts(
+                    topologies[topology]['atomdata'],
+                    shift_values['atoms'],
+                    'type',
+                    shift_values['atom types'],
+                    molid))
+            # masses
+            merged_topology['masses'] = _mergeDicts(
+                merged_topology['masses'], topologies[topology]['masses'])
+            # add topology counts
+            merged_topology['topologycounts'] = _combineDicts(
+                shift_values, topologies[topology]['topologycounts'])
+        molid += 1
+    # limits/boxsize
+    merged_topology['boxsize'] = newboxsize
+    # cleanup
+    del merged_topology['topologycounts'][None]
+    return merged_topology
+
+
+def writeTopology(topology, filename):
+    """
+    Writes topology to a file in the LAMMPS data format.
+
+    Parameters
+    ----------
+    topology : nested dicts
+        Dictionary in the style of atoms.getAllAtomData().
+
+    filename : str
+        Name of the datafile to be write topology to.
+    """
+
+    names = topology['atomnames']
+    badis = {'bonddata': "Bonds",
+             'angledata': "Angles",
+             'dihedraldata': "Dihedrals",
+             'improperdata': "Impropers"}
+
+    with open(filename, "w") as f:
+        # LAMMPS ignores the first line. Let's print some useful data. Max 254
+        # characters.
+        date = (datetime.now()
+                        .astimezone()
+                        .replace(microsecond=0)
+                        .isoformat(' ')
+                )
+        firstline = (f"LAMMPS data file merged using {_name}.{_this_file} "
+                     f"version {__version__} "
+                     f"on {date}"
+                     )[:254]
+
+        f.write(firstline)
+        # .write() does not do \n automatically:
+        f.write("\n")
+        # Header
+        for propert in topology['topologycounts']:
+            f.write(f"{topology['topologycounts'][propert]} {propert}\n")
+        # Box size
+        box = topology['boxsize']
+        box_order = ['xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi']
+        for low, high in zip(box_order[::2], box_order[1::2]):
+            f.write(f"{box[low]} {box[high]} {low} {high}\n")
+
+        # Pair/Bond/Angle/Dihedral/Improper Coeffs
+        for coeff in coeffs_equiv:
+            # Write only if it's > 0
+            if topology['topologycounts'][atoms.g_coeffs[coeff]] > 0:
+                # start section, separate from previous
+                f.write("\n")
+                # using g_coeffs because lammps uses pair types and atom types
+                # using always the same designation would make things too easy.
+                f.write(coeff)
+                f.write("\n")
+                # Empty line
+                f.write("\n")
+                section = topology[coeffs_equiv[coeff]]
+                for line in section:
+                    # id
+                    params = [str(a) for a in section[line][:-1]]
+                    f.write(f"{str(line)}")
+                    f.write(" ")
+                    f.write(f"{' '.join(params)}")
+                    f.write(f" # {section[line][-1].lstrip()}")
+                    f.write("\n")
+
+        # Masses
+        if len(topology['masses']) > 0:
+            # start section, separate from previous
+            f.write("\n")
+            f.write("Masses")
+            f.write("\n")
+            # Empty line
+            f.write("\n")
+            for atomtype in topology['atomnames']:
+                # id
+                f.write(f"{atomtype}")
+                f.write(" ")
+                # mass
+                f.write(f"{topology['masses'][names[atomtype]]:.4f}")
+                # atom type str
+                f.write(f" # {topology['atomnames'][atomtype]}")
+                f.write("\n")
+
+        # Atom data
+        if len(topology['atomdata']) > 0:
+            # start section, separate from previous
+            f.write("\n")
+            f.write("Atoms")
+            f.write("\n")
+            # Empty line
+            f.write("\n")
+            for atom in topology['atomdata']:
+                f.write(f"{atom}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['mol']}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['type']}")
+                f.write(" ")
+                # 4 decimal places for charge
+                f.write(f"{topology['atomdata'][atom]['charge']:.4f}")
+                f.write(" ")
+                # 6 decimal places for coordinates
+                f.write(f"{topology['atomdata'][atom]['x']:.6f}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['y']:.6f}")
+                f.write(" ")
+                f.write(f"{topology['atomdata'][atom]['z']:.6f}")
+                # atom type str
+                f.write(f" # {names[topology['atomdata'][atom]['type']]}")
+                f.write("\n")
+
+        # Bond/Angle/Dihedral/Improper data
+        f.write(_getStringBADI(topology, badis))
+
+    return
+
+
+def _getStringBADI(topology, badis):
+    # writeTopology helper function, takes topology dict and badis dict,
+    # returns string of all the lines in all BADIS ready to be written to file.
+    string = ''
+    for badi in badis:
+        if len(topology[badi]) > 0:
+            string += str('\n' + badis[badi]) + '\n\n'
+            for line in topology[badi]:
+                string += str(line) + ' ' + ' '.join(
+                    [str(a) for a in topology[badi][line]]) + '\n'
+    return string
+
+
+def _shiftKey(topology_property: dict, shiftkey: int):
+    # adds shiftkey to dictionarty key (int)
+    return {k + shiftkey: v for k, v in topology_property.items()}
+
+
+def _shiftDictOfLists(topology_property,
+                      shiftkey,
+                      shiftlistid,
+                      shiftlistelements,
+                      molid):
+    """
+    shifts dict of lists.
+    {key + shiftkey:
+        [listid + shiftlistid,
+        el + shiftlistelements,
+        el + shiftlistelements, etc]}
+    """
+
+    if shiftlistid is not None:
+        new_topology_property = {}
+        for item in topology_property:
+            new_list = topology_property[item].copy()
+            new_list[0] += shiftlistid
+            new_list[1:] = (x + shiftlistelements for x in new_list[1:])
+            new_topology_property[item + shiftkey] = new_list
+        return new_topology_property
+        #  return {k + shiftkey: [a for a in v] \
+        #  for k, v in topology_property.items()}
     else:
-        # GET LIST OF ORIGINAL KEYS
-        l_atoms_orig = []
-        l_atoms_orig = datafile[i]['atomdata'].keys()
-        l_bonds_orig = []
-        l_bonds_orig = datafile[i]['bonddata'].keys()
-        l_angles_orig = []
-        l_angles_orig = datafile[i]['angledata'].keys()
-        l_dh_orig = []
-        l_dh_orig = datafile[i]['dhdata'].keys()
-        l_imp_orig = []
-        l_imp_orig = datafile[i]['impdata'].keys()
-        # CALCULATE SHIFT (continuous sum over loop)
-        atshift += datafile[i-1]['numdata']['natoms']
-        print "atom shift - "+str(i)+" - "+str(atshift)
-        attypeshift += datafile[i-1]['numdata']['natomtypes']
-        print "atom type shift - "+str(i)+" - "+str(attypeshift)
-        bshift += datafile[i-1]['numdata']['nbonds']
-        btypeshift += datafile[i-1]['numdata']['nbondtypes']
-        angshift += datafile[i-1]['numdata']['nangles']
-        angtypeshift += datafile[i-1]['numdata']['nangletypes']
-        dhshift += datafile[i-1]['numdata']['ndh']
-        dhtypeshift += datafile[i-1]['numdata']['ndhtypes']
-        impshift += datafile[i-1]['numdata']['nimp']
-        imptypeshift += datafile[i-1]['numdata']['nimptypes']
-        # natprev = atshift #datafile[i-1]['numdata']['natoms']
-        moleshift += molshift[i-1]
-        print 'moleshift '+str(moleshift)
-        l_atoms = []
-        l_bonds = []
-        l_atoms = [x+atshift for x in l_atoms_orig]
-        l_bonds = [x+bshift for x in l_bonds_orig]
-        l_angles = [x+angshift for x in l_angles_orig]
-        l_dh = [x+dhshift for x in l_dh_orig]
-        l_imp = [x+impshift for x in l_imp_orig]
-
-        newdatafile[i] = {}
-        newdatafile[i]['atomdata'] = {}
-        newdatafile[i]['masses'] = {}
-        newdatafile[i]['masses'] = datafile[i]['masses']
-        newdatafile[i]['numdata'] = {}
-        newdatafile[i]['numdata'] = datafile[i]['numdata']
-        counter = 0
-        for j, x in enumerate(l_atoms_orig):
-            counter += 1
-            # INCREMENT MOL TYPE + MOL NUMBER
-            # TO DO
-            ################################
-            #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'][l_atoms_orig[j]]
-
-            #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'].pop(x)
-            newdatafile[i]['atomdata'][l_atoms[j]] = {}
-            newdatafile[i]['atomdata'][
-                l_atoms[j]] = datafile[i]['atomdata'][
-                l_atoms_orig[j]]
-            # print "OLD/NEW"
-            # print datafile[i]['atomdata'][l_atoms_orig[j]]
-            # print newdatafile[i]['atomdata'][l_atoms[j]]
-            #datafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-            # print "BEFORE"
-            # print newdatafile[i]['atomdata'][l_atoms[j]]
-            newdatafile[i]['atomdata'][l_atoms[j]]['mol'] += moleshift
-            newdatafile[i]['atomdata'][l_atoms[j]]['type'] += attypeshift
-            # print "AFTER:"
-            # print newdatafile[i]['atomdata'][l_atoms[j]]
-            #newdatafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-
-        # for j, x in enumerate(l_atoms_orig):
-        # print "MOL TYPE - NEW:
-        # "+str(newdatafile[i]['atomdata'][l_atoms[j]]['mol'])
-        """
-            datafile[i]['atomdata'][x]['type'] += attypeshift
-
-            if j < 5:
-                print "MOLSHIFT BEFORE: "+str(datafile[i]['atomdata'][x]['mol'])
-            datafile[i]['atomdata'][l_atoms_orig[j]]['mol'] += moleshift
-            if j < 5:
-                print "MOLSHIFT AFTER: "+str(datafile[i]['atomdata'][x]['mol'])
-            ####################################
-            #Renumber keys in dictionary for combined atoms
-            datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'][l_atoms_orig[j]]
-            #if j < 5:#11750:
-            print "After renumbering: "+str(datafile[i]['atomdata'][l_atoms[j]]['mol'])+" "+str(l_atoms[j])
-            #print "j: "+str(j)+" x: "+str(x)+" MOLA: "+str(datafile[i]['atomdata'][l_atoms[j]]['mol'])
-            #if j < 11755:
-            #    if j > 11750:
-            #        print "Previous mol num: "+str(datafile[i]['atomdata'][l_atoms[j-1]]['mol'])+" "+str(l_atoms[j-1])
-#            print "l_atoms l_atoms_orig "+str(l_atoms[j])+" "+str(l_atoms_orig[j])
-#            datafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-        """
-        # print "Length of dictionary before pop:
-        # "+str(len(newdatafile[i]['atomdata']))
-        """
-        for k in range (1, atshift+1):
-            datafile[i]['atomdata'].pop(k, None)
-        print "Length of dictionary after pop: "+str(len(datafile[i]['atomdata']))
-
-        j = 0
-        """
-        """
-        for j, x in enumerate(l_atoms_orig):
-             if j < 5: #11750:
-                print "After renumbering part 2: "+str(datafile[i]['atomdata'][l_atoms[j]]['mol'])+" "+str(l_atoms[j])
-        """
-        # if j < 5:
-        #    print datafile[i]['atomdata'][l_atoms[j]]['mol']
-
-        # for j, x in enumerate(l_atoms_prev):
-        #    newdatafile[i]['atomdata'].pop(l_atoms_orig[j], None)
-        #datafile[i]['atomdata'][l_atoms[j]] = datafile[i]['atomdata'].pop(x)
-
-        newdatafile[i]['bonddata'] = {}
-        for j, x in enumerate(l_bonds_orig):
-            # INCREMENT ATOM NUMBERS / BONDTYPE IN BOND LIST
-            newdatafile[i]['bonddata'][l_bonds[j]] = {}
-            newdatafile[i]['bonddata'][
-                l_bonds[j]] = datafile[i]['bonddata'][
-                l_bonds_orig[j]]
-            newdatafile[i]['bonddata'][l_bonds[j]]['at1'] += atshift
-            newdatafile[i]['bonddata'][l_bonds[j]]['at2'] += atshift
-            newdatafile[i]['bonddata'][l_bonds[j]]['bondtype'] += btypeshift
-            # SHIFT BOND NUMBERS IN DICTIONARY
-            #newdatafile[i]['bonddata'].pop(l_bonds_orig[j], None)
-            #newdatafile[i]['bonddata'][l_bonds[j]] = datafile[i]['bonddata'].pop(x)
-        # for k in range (1, bshift+1):
-        #    datafile[i]['bonddata'].pop(k, None)
-
-        newdatafile[i]['angledata'] = {}
-        for j, x in enumerate(l_angles_orig):
-            # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
-            newdatafile[i]['angledata'][l_angles[j]] = {}
-            newdatafile[i]['angledata'][
-                l_angles[j]] = datafile[i]['angledata'][
-                l_angles_orig[j]]
-            newdatafile[i]['angledata'][l_angles[j]]['at1'] += atshift
-            newdatafile[i]['angledata'][l_angles[j]]['at2'] += atshift
-            newdatafile[i]['angledata'][l_angles[j]]['at3'] += atshift
-            newdatafile[i]['angledata'][
-                l_angles[j]]['angletype'] += angtypeshift
-            # SHIFT ANGLE NUMBERS IN DICTIONARY
-            #newdatafile[i]['angledata'].pop(l_angles_orig[j], None)
-            #datafile[i]['angledata'][l_angles[j]] = datafile[i]['angledata'].pop(x)
-
-        newdatafile[i]['dhdata'] = {}
-        for j, x in enumerate(l_dh_orig):
-            # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
-            newdatafile[i]['dhdata'][l_dh[j]] = {}
-            newdatafile[i]['dhdata'][
-                l_dh[j]] = datafile[i]['dhdata'][
-                l_dh_orig[j]]
-            newdatafile[i]['dhdata'][l_dh[j]]['at1'] += atshift
-            newdatafile[i]['dhdata'][l_dh[j]]['at2'] += atshift
-            newdatafile[i]['dhdata'][l_dh[j]]['at3'] += atshift
-            newdatafile[i]['dhdata'][l_dh[j]]['at4'] += atshift
-            newdatafile[i]['dhdata'][l_dh[j]]['dhtype'] += dhtypeshift
-            # SHIFT ANGLE NUMBERS IN DICTIONARY
-        # for k in range (1, dhshift+1):
-            #datafile[i]['dhdata'].pop(k, None)
-            #datafile[i]['dhdata'][l_dh[j]] = datafile[i]['dhdata'].pop(x)
-            #newdatafile[i]['dhdata'].pop(l_dh_orig[j], None)
-
-        newdatafile[i]['impdata'] = {}
-        for j, x in enumerate(l_imp_orig):
-            # INCREMENT ATOM NUMBERS / ANGLETYPE IN ANGLE LIST
-            newdatafile[i]['impdata'][l_imp[j]] = {}
-            newdatafile[i]['impdata'][
-                l_imp[j]] = datafile[i]['impdata'][
-                l_imp_orig[j]]
-            newdatafile[i]['impdata'][l_imp[j]]['at1'] += atshift
-            newdatafile[i]['impdata'][l_imp[j]]['at2'] += atshift
-            newdatafile[i]['impdata'][l_imp[j]]['at3'] += atshift
-            newdatafile[i]['impdata'][l_imp[j]]['at4'] += atshift
-            newdatafile[i]['impdata'][l_imp[j]]['imptype'] += imptypeshift
-            # SHIFT ANGLE NUMBERS IN DICTIONARY
-            # for k in range (1, impshift+1):
-            #    datafile[i]['impdata'].pop(k, None)
-            #newdatafile[i]['impdata'].pop(l_imp_orig[j], None)
-            #datafile[i]['impdata'][l_imp[j]] = datafile[i]['impdata'].pop(x)
+        return _shiftKey(topology_property, shiftkey)
 
 
-###################################################
-# WRITE OUTPUT DATA FILE
+def _shiftDictOfDicts(topology_property,
+                      shiftkey,
+                      targetinnerkey,
+                      shiftinnervalue,
+                      molid):
+    """
+    shifts dict of lists.
+    {key + shiftkey:
+        {unrelated_key: unrelated_value,
+        targetinnerkey: original_value + shiftinnervalue,
+        unrelated_key: unrelated_value}}
+    """
 
-thefile = open(outputfile, "w")
+    new_topology_property = _shiftKey(topology_property, shiftkey)
+    new_topology_property = _setMolid(new_topology_property, molid)
+    new_topology_property = _addToAtomProperty(new_topology_property,
+                                               targetinnerkey,
+                                               shiftinnervalue)
+    return new_topology_property
 
-###############################################
-# WRITE HEADER
-thefile.write("Combined LAMMPS data file\n")
 
-totnatoms = max(newdatafile[numdatafiles]['atomdata'].keys())
-print str(totnatoms)+" atoms"
-thefile.write(str(totnatoms)+" atoms\n")
-##########################################
-totnbonds = 0
-totnangles = 0
-totndh = 0
-totnimp = 0
-for i in range(1, numdatafiles+1):
+def _addToAtomProperty(topology, propert, value):
+    # adds value to every topology[:][propert]
+    for atom in topology:
+        topology[atom][propert] += value
+    return topology
+
+
+def _setMolid(topology, molid):
+    # changes molid
+    for atom in topology:
+        topology[atom]['mol'] = molid
+    return topology
+
+
+def _combineDicts(a, b, op=operator.add):
+    # dark magic. From: https://stackoverflow.com/a/11012181
+    return dict(list(a.items()) + list(b.items()) +
+                [(k, op(a[k], b[k])) for k in set(b) & set(a)])
+
+
+def _mergeDicts(a, b):
+    # for mass, warns about similar keys with different values.
+    error = 'Trying to merge two dictionaries that share a key with'\
+            ' different values.'
+    result = deepcopy(a)
     try:
-        totnbonds += len(newdatafile[i]['bonddata'].keys())
-        totnangles += len(newdatafile[i]['angledata'].keys())
-        totndh += len(newdatafile[i]['dhdata'].keys())
-        totnimp += len(newdatafile[i]['imp'].keys())
-    except BaseException:
-        junk = 0
+        for key in b:
+            if key in a.keys() and a[key] != b[key]:
+                raise ValueExists
+            else:
+                result[key] = b[key]
+    except ValueExists as e:
+        message = f"{error} Offending key: {key}"
+        print(message)
+        raise ValueExists(message) from e
 
-# print totnbonds, totnangles, totndh, totnimp
-thefile.write(str(totnbonds)+" bonds\n")
-thefile.write(str(totnangles)+" angles\n")
-thefile.write(str(totndh)+" dihedrals\n")
-thefile.write(str(totnimp)+" impropers\n")
-
-"""
-DEPRECATED - 26/11/14
-try:
-    totnbonds = max(newdatafile[numdatafiles]['bonddata'].keys())
-except (ValueError, TypeError):
-    totnbonds = 0
+    return result
 
 
-try:
-    totnangles = max(newdatafile[numdatafiles]['angledata'].keys())
-except (ValueError, TypeError):
-    totnangles = 0
-print str(totnangles)+" angles"
-thefile.write(str(totnangles)+" angles\n")
-
-try:
-    totndh = max(newdatafile[numdatafiles]['dhdata'].keys())
-except (ValueError, TypeError):
-    totndh = 0
-print str(totndh)+" dihedrals"
-thefile.write(str(totndh)+" dihedrals\n")
-
-try:
-    totnimp = max(newdatafile[numdatafiles]['impdata'].keys())
-except (ValueError, TypeError):
-    totnimp = 0
-print str(totnimp)+" impropers"
-thefile.write(str(totnimp)+" impropers\n")
-"""
-
-##############################
-# TYPES
-lat = []
-lbo = []
-lan = []
-ldh = []
-lim = []
-
-for i in range(1, numdatafiles+1):
-    try:
-        at = newdatafile[i]['atomdata'].keys()
-        bo = newdatafile[i]['bonddata'].keys()
-        an = newdatafile[i]['angledata'].keys()
-        dh = newdatafile[i]['dhdata'].keys()
-        im = newdatafile[i]['impdata'].keys()
-        for j in at:
-            lat.append(newdatafile[i]['atomdata'][j]['type'])
-        for j in bo:
-            lbo.append(newdatafile[i]['bonddata'][j]['bondtype'])
-        for j in an:
-            lan.append(newdatafile[i]['angledata'][j]['angletype'])
-        for j in dh:
-            ldh.append(newdatafile[i]['dhdata'][j]['dhtype'])
-        for j in im:
-            lim.append(newdatafile[i]['impdata'][j]['imptype'])
-    except BaseException:
-        junk = 0
-try:
-    totnatomstype = max(lat)
-except BaseException:
-    totnatomstype = 0
-try:
-    totnbondstype = max(lbo)
-except BaseException:
-    totnbondstype = 0
-try:
-    totnanglestype = max(lan)
-except BaseException:
-    totnanglestype = 0
-try:
-    totndhtype = max(ldh)
-except BaseException:
-    totndhtype = 0
-try:
-    totnimptype = max(lim)
-except BaseException:
-    totnimptype = 0
-# print totnbondstype, totnanglestype, totndhtype, totnimptype
-
-print str(totnatomstype)+" atom types"
-print str(totnbondstype)+" bond types"
-print str(totnanglestype)+" angle types"
-print str(totndhtype)+" dihedral types"
-print str(totnimptype)+" improper types"
-
-thefile.write(str(totnatomstype)+" atom types\n")
-thefile.write(str(totnbondstype)+" bond types\n")
-thefile.write(str(totnanglestype)+" angle types\n")
-thefile.write(str(totndhtype)+" dihedral types\n")
-thefile.write(str(totnimptype)+" improper types\n")
-thefile.write("0 0 xlo xhi\n")
-thefile.write("0 0 ylo yhi\n")
-thefile.write("0 0 zlo zhi\n")
-
-thefile.close()
+def _strToFunction(settings):
+    # changes min/max (str) to min/max (function)
+    for key in settings:
+        func = settings[key]['minormax']
+        if func == 'min':
+            settings[key]['minormax'] = min
+        elif func == 'max':
+            settings[key]['minormax'] = max
+        else:
+            func = 'None' if func == '' else func
+            raise ValueError(
+                f"The key 'minormax' accepts only 'min' or 'max', not {func}")
+    return settings
 
 
-"""
-DEPRECATED - 26/11/14
-try:
-    l = []
-    b = newdatafile[numdatafiles]['atomdata'].keys()
-    for i in b:
-        l.append(newdatafile[numdatafiles]['atomdata'][i]['type'])
-    totnatomstype = max(l)
-except (ValueError, TypeError):
-    totnatomstype = 0
-print str(totnatomstype)+" atom types"
+def _openYaml(ifile):
+    # to read settings file
+    with open(ifile, 'r') as f:
+        settings = full_load(f)
+    return _strToFunction(settings['inputs']), settings['output']
 
 
-try:
-    l = []
-    b = newdatafile[numdatafiles]['bonddata'].keys()
-    for i in b:
-        l.append(newdatafile[numdatafiles]['bonddata'][i]['bondtype'])
-    totnbondstype = max(l)
-except (ValueError, TypeError):
-    totnbondstype = 0
-print str(totnbondstype)+" bond types"
-thefile.write(str(totnbondstype)+" bond types\n")
-
-try:
-    l = []
-    b = newdatafile[numdatafiles]['angledata'].keys()
-    for i in b:
-        l.append(newdatafile[numdatafiles]['angledata'][i]['angletype'])
-    totnanglestype = max(l)
-except (ValueError, TypeError):
-    totnanglestype = 0
-print str(totnanglestype)+" angle types"
-thefile.write(str(totnanglestype)+" angle types\n")
-
-try:
-    l = []
-    b = newdatafile[numdatafiles]['dhdata'].keys()
-    for i in b:
-        l.append(newdatafile[numdatafiles]['dhdata'][i]['dhtype'])
-    totndhtype = max(l)
-except (ValueError, TypeError):
-    totndhtype = 0
-print str(totndhtype)+" dihedral types"
-thefile.write(str(totndhtype)+" dihedral types\n")
-
-try:
-    l = []
-    b = newdatafile[numdatafiles]['impdata'].keys()
-    for i in b:
-        l.append(newdatafile[numdatafiles]['impdata'][i]['imptype'])
-    totnimptype = max(l)
-except (ValueError, TypeError):
-    totnimptype = 0
-print str(totnimptype)+" improper types"
-thefile.write(str(totnimptype)+" improper types\n")
-"""
+def _limit(function, coordinate, topology):
+    # gets min/max coordinates in topology
+    return topology['atomdata'][function(
+        topology['atomdata'], key=lambda atom:
+            topology['atomdata'][atom][coordinate])][coordinate]
 
 
-#############################################################
-#            HEADER COMPLETE
-#############################################################
-
-##############################################################
-#            GET X/Y/Z HI LO
-
-#  TO BE COMPLETED
-
-##############################################################
-
-##############################################################
-# ALL COEFFS
-
-# TO BE COMPLETED
-
-################################################################
-
-
-###############################################################
-# WRITE ATOMS PART OF DATA FILE
-def writeAtomsData(outputfn, atomdata, i):
-    thefile = open(outputfn, "a")
-    if(i == 1):
-        thefile.write("\n")
-        thefile.write("Atoms\n")
-        thefile.write("\n")
-    b = sorted(atomdata.keys())
-    for i in b:
-        thefile.write(
-            "%i %i %i %f %f %f %f %s %s \n" %
-            (i, atomdata[i]['mol'],
-             atomdata[i]['type'],
-             atomdata[i]['charge'],
-             atomdata[i]['x'],
-             atomdata[i]['y'],
-             atomdata[i]['z'],
-             '#', atomdata[i]['atomname']))
-    thefile.close()
-
-
-def writeBondData(outputfn, bonddata, i, totnbonds):
-    thefile = open(outputfn, "a")
-    if(i == 1 and totnbonds != 0):
-        thefile.write("\n")
-        thefile.write("Bonds\n")
-        thefile.write("\n")
-    if(totnbonds != 0):
-        b = sorted(bonddata.keys())
-        for i in b:
-            thefile.write(
-                "%i %i %i %i \n" %
-                (i, bonddata[i]['bondtype'],
-                 bonddata[i]['at1'],
-                 bonddata[i]['at2']))
-    thefile.close()
-
-
-def writeAngleData(outputfn, angledata, i, totnangles):
-    thefile = open(outputfn, "a")
-    if(i == 1 and totnangles != 0):
-        thefile.write("\n")
-        thefile.write("Angles\n")
-        thefile.write("\n")
-    if(totnangles != 0):
-        b = sorted(angledata.keys())
-        for i in b:
-            thefile.write(
-                "%i %i %i %i %i \n" %
-                (i, angledata[i]['angletype'],
-                 angledata[i]['at1'],
-                 angledata[i]['at2'],
-                 angledata[i]['at3']))
-    thefile.close()
-
-
-def writeDHData(outputfn, dhdata, i, totndh):
-    thefile = open(outputfn, "a")
-    if(i == 1 and totndh != 0):
-        thefile.write("\n")
-        thefile.write("Dihedrals\n")
-        thefile.write("\n")
-    if(totndh != 0):
-        b = sorted(dhdata.keys())
-        for i in b:
-            thefile.write(
-                "%i %i %i %i %i %i \n" %
-                (i, dhdata[i]['dhtype'],
-                 dhdata[i]['at1'],
-                 dhdata[i]['at2'],
-                 dhdata[i]['at3'],
-                 dhdata[i]['at4']))
-    thefile.close()
-
-
-def writeIMPData(outputfn, impdata, i, totnimp):
-    thefile = open(outputfn, "a")
-    if(i == 1 and totnimp != 0):
-        thefile.write("\n")
-        thefile.write("Impropers\n")
-        thefile.write("\n")
-    if(totnimp != 0):
-        b = sorted(impdata.keys())
-        for i in b:
-            thefile.write(
-                "%i %i %i %i %i %i \n" %
-                (i, impdata[i]['imptype'],
-                 impdata[i]['at1'],
-                 impdata[i]['at2'],
-                 impdata[i]['at3'],
-                 impdata[i]['at4']))
-    thefile.close()
-
-
-def writeMasses(outputfn, massdata, i, totnatomstype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1):
-        thefile.write("\n")
-        thefile.write("Masses\n")
-        thefile.write("\n")
-    b = sorted(massdata.keys())
-    for i, x in enumerate(b):
-        thefile.write("%i %f %s %s \n" % (counter, massdata[x], "#", x))
-        counter += 1
-    return counter
-
-
-def writePairCoeffs(outputfn, paircoeffs, i, totnatomstype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1):
-        thefile.write("\n")
-        thefile.write("Pair Coeffs\n")
-        thefile.write("\n")
-    b = sorted(paircoeffs.keys())
-    # print "B - sorted pair coeffs:"
-    # print b
-    # print "pair coeffs"
-    # print paircoeffs
-    # print "pair coeff"
-    # print paircoeff
-    for i in b:
-        # print "i (in b) :"+str(i)
-        # print "counter :"+str(counter)
-        # print "SAME AS FILE WRITE"
-        # print counter, paircoeff[i]['eps'], paircoeff[i]['sig'], '#',
-        # paircoeff[i]['label']
-        thefile.write(
-            "%i %s %s %s %s \n" %
-            (counter, paircoeffs[i]['eps'],
-             paircoeffs[i]['sig'],
-             '#', paircoeffs[i]['label']))
-        counter += 1
-    thefile.close()
-    return counter
-
-
-def writeBondCoeffs(outputfn, bondcoeffs, i, totnbondstype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1):
-        thefile.write("\n")
-        thefile.write("Bond Coeffs\n")
-        thefile.write("\n")
-    b = sorted(bondcoeffs.keys())
-    for i in b:
-        thefile.write(
-            "%i %s %s %s %s \n" %
-            (counter, bondcoeffs[i]['k'],
-             bondcoeffs[i]['r'],
-             '#', bondcoeffs[i]['label']))
-        counter += 1
-    thefile.close()
-    return counter
-
-
-def writeAngleCoeffs(outputfn, anglecoeffs, i, totnanglestype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1):
-        thefile.write("\n")
-        thefile.write("Angle Coeffs\n")
-        thefile.write("\n")
-    b = sorted(anglecoeffs.keys())
-    for i in b:
-        thefile.write(
-            "%i %s %s %s %s \n" %
-            (counter, anglecoeffs[i]['k'],
-             anglecoeffs[i]['theta'],
-             '#', anglecoeffs[i]['label']))
-        counter += 1
-    thefile.close()
-    return counter
-
-
-def writeDHCoeffs(outputfn, dhcoeffs, i, totndhtype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1):
-        thefile.write("\n")
-        thefile.write("Dihedral Coeffs\n")
-        thefile.write("\n")
-    b = sorted(dhcoeffs.keys())
-    for i in b:
-        thefile.write(
-            "%i %s %s %s %s %s %s \n" %
-            (counter, dhcoeffs[i]['a'],
-             dhcoeffs[i]['b'],
-             dhcoeffs[i]['c'],
-             dhcoeffs[i]['d'],
-             '#', dhcoeffs[i]['label']))
-        counter += 1
-    thefile.close()
-    return counter
-
-
-def writeIMPCoeffs(outputfn, impcoeffs, i, totnimptype, counter):
-    thefile = open(outputfn, "a")
-    if (i == 1 and totnimp != 0):
-        thefile.write("\n")
-        thefile.write("Improper Coeffs\n")
-        thefile.write("\n")
-    b = sorted(impcoeffs.keys())
-    for i in b:
-        thefile.write(
-            "%i %s %s %s %s %s %s \n" %
-            (counter, impcoeffs[i]['a'],
-             impcoeffs[i]['b'],
-             impcoeffs[i]['c'],
-             impcoeffs[i]['d'],
-             '#', impcoeffs[i]['label']))
-        counter += 1
-    thefile.close()
-    return counter
-
-
-paircount = 1
-for i in range(1, numdatafiles+1):
-    paircount = writePairCoeffs(
-        outputfile, datafile[i]['paircoeff'],
-        i, totnatomstype, paircount)
-
-bondcount = 1
-for i in range(1, numdatafiles+1):
-    bondcount = writeBondCoeffs(
-        outputfile, datafile[i]['bondcoeff'],
-        i, totnbondstype, bondcount)
-
-anglecount = 1
-for i in range(1, numdatafiles+1):
-    anglecount = writeAngleCoeffs(
-        outputfile, datafile[i]['anglecoeff'],
-        i, totnanglestype, anglecount)
-
-dhcount = 1
-for i in range(1, numdatafiles+1):
-    dhcount = writeDHCoeffs(
-        outputfile, datafile[i]['dhcoeff'],
-        i, totndhtype, dhcount)
-
-impcount = 1
-for i in range(1, numdatafiles+1):
-    impcount = writeIMPCoeffs(
-        outputfile, datafile[i]['impcoeff'],
-        i, totnimptype, impcount)
-
-masscount = 1
-for i in range(1, numdatafiles+1):
-    masscount = writeMasses(
-        outputfile, newdatafile[i]['masses'],
-        i, totnatomstype, masscount)
-
-for i in range(1, numdatafiles+1):
-    writeAtomsData(outputfile, newdatafile[i]['atomdata'], i)
-
-for i in range(1, numdatafiles+1):
-    writeBondData(outputfile, newdatafile[i]['bonddata'], i, totnbonds)
-
-for i in range(1, numdatafiles+1):
-    writeAngleData(outputfile, newdatafile[i]['angledata'], i, totnangles)
-
-for i in range(1, numdatafiles+1):
-    writeDHData(outputfile, newdatafile[i]['dhdata'], i, totndh)
-
-for i in range(1, numdatafiles+1):
-    writeIMPData(outputfile, newdatafile[i]['impdata'], i, totnimp)
+def main(args=argv):
+    print("")
+    inputs, outputsettings = readInputFile(args)
+    # read files
+    topologies = readTopologies(inputs)
+    # find minimums and maximums
+    limits = limitsAllTopologies(topologies)
+    # shift mins/maxs to defined values
+    new_topologies = shiftTopologies(topologies, limits, inputs)
+    #  create new merged topology
+    merged_topology = mergeTopologies(
+        new_topologies, outputsettings['boxsize'])
+    # write merged topology to datafile
+    writeTopology(merged_topology, outputsettings['filename'])
+    print("File created Successfully")
+    print("")
