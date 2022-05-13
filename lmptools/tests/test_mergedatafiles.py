@@ -17,10 +17,10 @@ ref_mergeYamlOut = {
 }
 
 ref_mergeYamlIn = {
-    "Fe2O3_50_down.lammps": {
+    "../data/Fe2O3_50_down.lammps": {
         "minormax": max,
         "value": -1.5},
-    "Fe2O3_50_up.lammps": {
+    "../data/Fe2O3_50_up.lammps": {
         "minormax": min,
         "value": 80.0},
     "uadodecane.data": {
@@ -115,11 +115,11 @@ class TestSettings:
 
     ref_minmax = {
         # each line: x_min, y_min, z_min, x_max, y_max, z_max
-        "Fe2O3_50_down.lammps": {
+        "../data/Fe2O3_50_down.lammps": {
             min: {'x': 0.303, 'y': 0.0, 'z': -8.606},
             max: {'x': 54.785, 'y': 49.609001, 'z': 0.0},
             },
-        "Fe2O3_50_up.lammps": {
+        "../data/Fe2O3_50_up.lammps": {
             min: {'x': 0.303, 'y': 0.0, 'z': 458.0},
             max: {'x': 54.785, 'y': 49.609001, 'z': 466.606},
             },
@@ -188,11 +188,11 @@ class TestTopologies(TestSettings):
 
     ref_newminmax = {
         # each line: x_min, y_min, z_min, x_max, y_max, z_max
-        "Fe2O3_50_down.lammps": {
+        "../data/Fe2O3_50_down.lammps": {
             min: {'x': 0.303, 'y': 0.0, 'z': -10.106},
             max: {'x': 54.785, 'y': 49.609001, 'z': -1.5},
             },
-        "Fe2O3_50_up.lammps": {
+        "../data/Fe2O3_50_up.lammps": {
             min: {'x': 0.303, 'y': 0.0, 'z': 80.0},
             max: {'x': 54.785, 'y': 49.609001, 'z': 88.606},
             },
