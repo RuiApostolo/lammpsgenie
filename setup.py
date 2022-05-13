@@ -36,6 +36,13 @@ setup(
         "PyYAML>=5.3.1"
     ],
     entry_points={
-        'console_scripts': ['mergedatafiles=lmptools.mergedatafiles:main'],
-    }
+        'console_scripts': [
+            'mergedatafiles=lmptools.mergedatafiles:main',
+            'saveiron50=lmptools.copy_ironfiles:save_iron_50',
+            'saveiron100=lmptools.copy_ironfiles:save_iron_100',
+            'saveironall=lmptools.copy_ironfiles:save_iron_all',
+        ],
+    },
+    include_package_data=True,
+    package_data={"": ["data/*.lammps"]},
 )

@@ -1,5 +1,7 @@
 from yaml import full_load, dump
+from pathlib import Path
 import lmptools.mergedatafiles as mdf
+import lmptools.copy_ironfiles as cif
 
 
 def modified_settings(orig_file, new_path):
@@ -23,3 +25,21 @@ def test_mergedatafiles_script(mock_path, tmp_path):
     with open(out_file, 'r') as f:
         result = f.readlines()
     assert result[1:] == expected[1:]
+
+
+def test_saveiron_script(tmp_path, monkeypatch):
+    iron_50 = ['Fe2O3_50_down.lammps', 'Fe2O3_50_up.lammps']
+    iron_100 = ['Fe2O3_100_down.lammps', 'Fe2O3_100_up.lammps']
+    iron_all = iron_50 + iron_100
+
+    # hack. there's likely a much better way to solve this
+    cwd = Path(__file__).parent.resolve()
+    monkeypatch.chdir(tmp_path)
+    cif.save_iron_all()
+    monkeypatch.chdir(str(cwd) + "/../data")
+    for file in iron_all:
+        with open(file, 'r') as f:
+            expected = f.readlines()
+        with open(tmp_path/file, 'r') as f:
+            result = f.readlines()
+        assert result == expected
