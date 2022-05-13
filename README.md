@@ -6,13 +6,58 @@ This package is a collection of tools for handling LAMMPS data and dump files.
 
 ### mergedatafiles
 
-The main way to interact with lmptools is using the script `mergedatafiles`, which should be called with a settings file (yaml format) like so:
+The main way to interact with lmptools is using the script `mergedatafiles`, which should be called with a settings file (YAML format) like so:
 
 ```
 mergedatafiles merge_settings.yaml
 ```
 
 If called without any argument, it will search the current directory for a `merge.yaml` and `merge.yml` (in this order) and use the first one it finds, or return an error.
+
+The YAML file should contain two dictionaries (`inputs` and `outputs`), with the following format:
+
+```
+output:
+  filename: <filename/path where to write merged file>
+  boxsize: # new boxsize for the merged file
+    xlo: float
+    xhi: float
+    ylo: float
+    yhi: float
+    zlo: float
+    zhi: float
+inputs:
+  # as many of the following as needed
+  <filename/path of a data file to read from>:
+    minormax: <min or max>
+    value: float
+```
+
+The script will gather the information from all the input files, shift coordinates to make sure they match the min/max values as given, and then write a new merged data file, with the new box limits provided.
+
+Example:
+
+```
+output:
+  filename: merged_uadodecane.lammps
+  boxsize:
+    xlo: 0.0
+    xhi: 55.088
+    ylo: 0.0
+    yhi: 50.38
+    zlo: -20.0
+    zhi: 120.0
+inputs:
+  ../data/Fe2O3_50_down.lammps:
+    minormax: max
+    value: -1.5
+  ../data/Fe2O3_50_up.lammps:
+    minormax: min
+    value: 80.0
+  uadodecane.data:
+    minormax: min
+    value: 1.5
+```
 
 ### saveiron
 

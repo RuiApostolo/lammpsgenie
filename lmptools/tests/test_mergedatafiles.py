@@ -259,6 +259,21 @@ class TestMerge(TestTopologies):
                         if prop != 'atomdata']:
             assert merged_undertest1[propert] == expected_merged[propert]
 
+    def test_mergeTopologies_smallbox(self,
+                                      mock_path,
+                                      shifted_topologies):
+        box = {
+            'xlo': 10.0,
+            'xhi': 20.0,
+            'ylo': 10.0,
+            'yhi': 20.0,
+            'zlo': 10.0,
+            'zhi': 20.0,
+            }
+        with pytest.warns(UserWarning, match='Increase boxsize') as warn:
+            mdf.mergeTopologies(shifted_topologies, box)
+        assert len(warn) == 6
+
     @pytest.mark.parametrize("topology, result", [
         (pytest.lazy_fixture('merged_undertest1'),
          'expected_merged_uadodecane.lammps'),
