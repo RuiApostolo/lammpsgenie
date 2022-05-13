@@ -2,7 +2,9 @@
 
 This package is a collection of tools for handling LAMMPS data and dump files.
 
-## Script
+## Scripts
+
+### mergedatafiles
 
 The main way to interact with lmptools is using the script `mergedatafiles`, which should be called with a settings file (yaml format) like so:
 
@@ -11,6 +13,16 @@ mergedatafiles merge_settings.yaml
 ```
 
 If called without any argument, it will search the current directory for a `merge.yaml` and `merge.yml` (in this order) and use the first one it finds, or return an error.
+
+### saveiron
+
+There are three variants of the `saveiron` script that write to the current working directory data files of the iron oxide surface:
+
+* saveiron50
+* saveiron100
+* saveironall
+
+The first one writes the files of surfaces with side 50Å, the second the files for surfaces with side 100Å, and the last one writes the files for surfaces of both 50 and 100Å.
 
 
 ## Development

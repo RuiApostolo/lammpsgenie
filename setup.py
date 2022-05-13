@@ -24,13 +24,17 @@ setup(
         "Bug Tracker": "https://github.com/RuiApostolo/lmpdtmrg/issues"
     },
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Development Status :: 3 - Alpha",
-        "Operating System :: Unix"
+        "Operating System :: Unix",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Physics",
         ],
-    package_dir={"": "lmptools"},
-    packages=find_packages(where="lmptools"),
+    packages=find_packages(where="."),
     python_requires=">=3.6",
     install_requires=[
         "PyYAML>=5.3.1"
