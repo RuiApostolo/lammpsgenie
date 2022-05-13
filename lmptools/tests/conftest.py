@@ -1,5 +1,4 @@
 import pytest
-#  from pathlib import Path
 import lmptools.readfiles as rdfl
 
 
@@ -11,12 +10,6 @@ def emptylist():
 @pytest.fixture
 def mock_path(monkeypatch):
     monkeypatch.chdir("tests")
-
-
-#  @pytest.fixture
-#  def base_path() -> Path:
-#      """Get the current folder of the test"""
-#      return Path(__file__).parent
 
 
 @pytest.fixture
@@ -59,6 +52,20 @@ def ref_data_files():
 
 def ref_data_files_large():
     return _add_testd(["uadodecane.data"]) + ref_data_files()
+
+
+def ref_iron_files():
+    ironfiles = (
+        "data/Fe2O3_50_down.lammps",
+        "data/Fe2O3_50_up.lammps",
+        "data/Fe2O3_100_down.lammps",
+        "data/Fe2O3_100_up.lammps",
+    )
+    return [a for a in ironfiles]
+
+
+def ref_all_data_fs():
+    return ref_data_files_large() + ref_iron_files()
 
 
 def _add_testd(files: list):

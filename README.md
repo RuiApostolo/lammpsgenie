@@ -132,16 +132,21 @@ The [numpy styleguide] was followed for DocString documentation.
 Install required packages with:
 
 ```
-pip install build twine
+pip install --upgrade build twine
 ```
 
 1. Modify code
 2. Assure tests pass, and cover 100% of the code.
 3. Modify version in `_version.py`
-4. Create a build with `python3 -m build --sdist` and `python3 -m build --wheel`.
+4. Create a build with `python3 -m build`.
 5. Check that the distribution files pass checks with `twine check dist/*`
-6. Upload to PyPi with
+6. Upload to PyPi with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
 
 
+Note: you need an account on pypi, and the necessary rights to upload, and a [registered token] saved on `.pypirc`
+
+To test your distribution, you might want to test upload to the PyPi test repository with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
+(Needs a separate registered account).
 
 [numpy styleguide]: https://numpydoc.readthedocs.io/en/latest/format.html
+[registered token]: https://pypi.org/help/#apitoken

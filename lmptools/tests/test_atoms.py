@@ -541,9 +541,6 @@ def test_getCOM(dumpfilelines,
                         atoms.getAtomType("tests/uadodecane.data"),
                         9
                         )[frame]
-        #  framename = list(new_traj.keys())[0]
-        #  framename = [*new_traj][0]
-        #  traj[framename] = new_traj[framename]
     masses = atoms.getAtomData(datafile)['masses']
     com = atoms.getCOM(traj, tsnamerange, atomlist, masses)
     assert com == ref_COM

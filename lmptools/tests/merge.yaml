@@ -8,10 +8,10 @@ output:
     zlo: -20.0
     zhi: 120.0
 inputs:
-  Fe2O3_50_down.lammps:
+  ../data/Fe2O3_50_down.lammps:
     minormax: max
     value: -1.5
-  Fe2O3_50_up.lammps:
+  ../data/Fe2O3_50_up.lammps:
     minormax: min
     value: 80.0
   uadodecane.data:
