@@ -1,5 +1,5 @@
 import pytest
-import lmptools.mergedatafiles as mdf
+import lammpsgenie.mergedatafiles as mdf
 from conftest import zipRefs
 from copy import deepcopy
 

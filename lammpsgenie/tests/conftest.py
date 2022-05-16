@@ -1,5 +1,5 @@
 import pytest
-import lmptools.readfiles as rdfl
+import lammpsgenie.readfiles as rdfl
 
 
 @pytest.fixture
