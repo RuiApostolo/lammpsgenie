@@ -1,4 +1,4 @@
-# lmptools
+# lammpsgenie
 
 This package is a collection of tools for handling LAMMPS data and dump files.
 
@@ -6,7 +6,7 @@ This package is a collection of tools for handling LAMMPS data and dump files.
 
 ### mergedatafiles
 
-The main way to interact with lmptools is using the script `mergedatafiles`, which should be called with a settings file (YAML format) like so:
+The main way to interact with lammpsgenie is using the script `mergedatafiles`, which should be called with a settings file (YAML format) like so:
 
 ```
 mergedatafiles merge_settings.yaml
@@ -159,7 +159,7 @@ ptw --runner "pytest --testmon"
 To check that the test cover the entirety of your code, use the coverage plugin for pytest:
 
 ```
-pytest --cov=lmptools/
+pytest --cov=lammpsgenie/
 ```
 
 There are several settings that can be changed for this tool, to do so, add a `.coveragerc` file to the project directory.
@@ -171,7 +171,7 @@ branch = True
 
 [paths]
 source =
-  lmptools
+  lammpsgenie
 
 [report]
 show_missing = True
@@ -197,12 +197,12 @@ pip install --upgrade build twine
 3. Modify version in `_version.py`
 4. Create a build with `python3 -m build`.
 5. Check that the distribution files pass checks with `twine check dist/*`
-6. Upload to PyPi with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
+6. Upload to PyPi with `python3 -m twine upload --repository pypi dist/lammpsgenie-<version>*`
 
 
 Note: you need an account on pypi, and the necessary rights to upload, and a [registered token] saved on `.pypirc`
 
-To test your distribution, you might want to test upload to the PyPi test repository with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
+To test your distribution, you might want to test upload to the PyPi test repository with `python3 -m twine upload --repository pypi dist/lammpsgenie-<version>*`
 (Needs a separate registered account).
 
 [numpy styleguide]: https://numpydoc.readthedocs.io/en/latest/format.html
