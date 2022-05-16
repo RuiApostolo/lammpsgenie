@@ -447,8 +447,10 @@ def mergeTopologies(topologies, newboxsize):
     for limit in merged_limits:
         for coord in merged_limits[limit]:
             under_test = merged_limits[limit][coord]
-            if limit(under_test,
-                     newboxsize[coord+lim_match[limit]]) == under_test:
+            if (limit(under_test,
+                      newboxsize[coord+lim_match[limit]]) == under_test) and (
+                      # when both are the same
+                      under_test != newboxsize[coord+lim_match[limit]]):
                 warn("Atoms have coordinates outside new box. \
                        Increase boxsize.", UserWarning)
     # cleanup
