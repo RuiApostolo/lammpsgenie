@@ -21,7 +21,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/RuiApostolo/lmpdtmrg",
     project_urls={
-        "Bug Tracker": "https://github.com/RuiApostolo/lmpdtmrg/issues"
+        "Bug Tracker": "https://github.com/RuiApostolo/lammpsgenie/issues"
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
