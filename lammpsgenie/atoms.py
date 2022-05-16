@@ -1,4 +1,4 @@
-import lmptools.readfiles as rdfl
+import lammpsgenie.readfiles as rdfl
 from re import compile, match
 from collections import defaultdict
 

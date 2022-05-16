@@ -1,7 +1,7 @@
 #!/bin/env python3
-import lmptools.atoms as atoms
-from lmptools._version import __version__
-from lmptools._name import _name
+import lammpsgenie.atoms as atoms
+from lammpsgenie._version import __version__
+from lammpsgenie._name import _name
 from yaml import full_load
 from sys import argv
 from copy import deepcopy

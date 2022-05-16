@@ -6,13 +6,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 
 main_ns = {}
-ver_path = convert_path("lmptools/_version.py")
+ver_path = convert_path("lammpsgenie/_version.py")
 with open(ver_path) as ver_file:
     exec(ver_file.read(), main_ns)
 
 
 setup(
-    name="lmptools",
+    name="lammpsgenie",
     version=main_ns['__version__'],
     author="Rui Apóstolo",
     author_email="ruiapostolo@gmail.com",
@@ -41,10 +41,10 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'mergedatafiles=lmptools.mergedatafiles:main',
-            'saveiron50=lmptools.copy_ironfiles:save_iron_50',
-            'saveiron100=lmptools.copy_ironfiles:save_iron_100',
-            'saveironall=lmptools.copy_ironfiles:save_iron_all',
+            'mergedatafiles=lammpsgenie.mergedatafiles:main',
+            'saveiron50=lammpsgenie.copy_ironfiles:save_iron_50',
+            'saveiron100=lammpsgenie.copy_ironfiles:save_iron_100',
+            'saveironall=lammpsgenie.copy_ironfiles:save_iron_all',
         ],
     },
     include_package_data=True,

@@ -1,4 +1,4 @@
-from lmptools.atoms import getNatoms
+from lammpsgenie.atoms import getNatoms
 
 
 """
