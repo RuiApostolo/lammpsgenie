@@ -14,7 +14,7 @@ mergedatafiles merge_settings.yaml
 
 If called without any argument, it will search the current directory for a `merge.yaml` and `merge.yml` (in this order) and use the first one it finds, or return an error.
 
-The YAML file should contain two dictionaries (`inputs` and `outputs`), with the following format:
+The YAML file should contain two dictionaries (`inputs` and `output`), with the following format:
 
 ```
 output:
