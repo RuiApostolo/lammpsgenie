@@ -1,5 +1,4 @@
 #!/bin/env python3
-<<<<<<< HEAD:lmptools/mergedatafiles.py
 """
 Functions and script required to merge LAMMPS data diles.
 """
@@ -7,7 +6,6 @@ Functions and script required to merge LAMMPS data diles.
 import lammpsgenie.atoms as atoms
 from lammpsgenie._version import __version__
 from lammpsgenie._name import _name
->>>>>>> master:lammpsgenie/mergedatafiles.py
 from yaml import full_load
 from sys import argv
 from copy import deepcopy
