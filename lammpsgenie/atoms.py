@@ -3,7 +3,6 @@
 Function that gets atomic information from already loaded data and dump files.
 """
 
-import lmptools.readfiles as rdfl
 import lammpsgenie.readfiles as rdfl
 >>>>>>> master:lammpsgenie/atoms.py
 from re import compile, match
