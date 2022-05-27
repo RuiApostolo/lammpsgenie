@@ -1,7 +1,7 @@
 from yaml import full_load, dump
 from pathlib import Path
-import lmptools.mergedatafiles as mdf
-import lmptools.copy_ironfiles as cif
+import lammpsgenie.mergedatafiles as mdf
+import lammpsgenie.copy_ironfiles as cif
 
 
 def modified_settings(orig_file, new_path):

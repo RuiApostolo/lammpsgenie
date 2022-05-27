@@ -1,16 +1,73 @@
-# lmptools
+# lammpsgenie
 
 This package is a collection of tools for handling LAMMPS data and dump files.
 
-## Script
+## Scripts
 
-The main way to interact with lmptools is using the script `mergedatafiles`, which should be called with a settings file (yaml format) like so:
+### mergedatafiles
+
+The main way to interact with lammpsgenie is using the script `mergedatafiles`, which should be called with a settings file (YAML format) like so:
 
 ```
 mergedatafiles merge_settings.yaml
 ```
 
 If called without any argument, it will search the current directory for a `merge.yaml` and `merge.yml` (in this order) and use the first one it finds, or return an error.
+
+The YAML file should contain two dictionaries (`inputs` and `output`), with the following format:
+
+```
+output:
+  filename: <filename/path where to write merged file>
+  boxsize: # new boxsize for the merged file
+    xlo: float
+    xhi: float
+    ylo: float
+    yhi: float
+    zlo: float
+    zhi: float
+inputs:
+  # as many of the following as needed
+  <filename/path of a data file to read from>:
+    minormax: <min or max>
+    value: float
+```
+
+The script will gather the information from all the input files, shift coordinates to make sure they match the min/max values as given, and then write a new merged data file, with the new box limits provided.
+
+Example:
+
+```
+output:
+  filename: merged_uadodecane.lammps
+  boxsize:
+    xlo: 0.0
+    xhi: 55.088
+    ylo: 0.0
+    yhi: 50.38
+    zlo: -20.0
+    zhi: 120.0
+inputs:
+  ../data/Fe2O3_50_down.lammps:
+    minormax: max
+    value: -1.5
+  ../data/Fe2O3_50_up.lammps:
+    minormax: min
+    value: 80.0
+  uadodecane.data:
+    minormax: min
+    value: 1.5
+```
+
+### saveiron
+
+There are three variants of the `saveiron` script that write to the current working directory data files of the iron oxide surface:
+
+* saveiron50
+* saveiron100
+* saveironall
+
+The first one writes the files of surfaces with side 50Å, the second the files for surfaces with side 100Å, and the last one writes the files for surfaces of both 50 and 100Å.
 
 
 ## Development
@@ -102,7 +159,7 @@ ptw --runner "pytest --testmon"
 To check that the test cover the entirety of your code, use the coverage plugin for pytest:
 
 ```
-pytest --cov=lmptools/
+pytest --cov=lammpsgenie/
 ```
 
 There are several settings that can be changed for this tool, to do so, add a `.coveragerc` file to the project directory.
@@ -114,7 +171,7 @@ branch = True
 
 [paths]
 source =
-  lmptools
+  lammpsgenie
 
 [report]
 show_missing = True
@@ -140,12 +197,12 @@ pip install --upgrade build twine
 3. Modify version in `_version.py`
 4. Create a build with `python3 -m build`.
 5. Check that the distribution files pass checks with `twine check dist/*`
-6. Upload to PyPi with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
+6. Upload to PyPi with `python3 -m twine upload --repository pypi dist/lammpsgenie-<version>*`
 
 
 Note: you need an account on pypi, and the necessary rights to upload, and a [registered token] saved on `.pypirc`
 
-To test your distribution, you might want to test upload to the PyPi test repository with `python3 -m twine upload --repository pypi dist/lmptools-<version>*`
+To test your distribution, you might want to test upload to the PyPi test repository with `python3 -m twine upload --repository pypi dist/lammpsgenie-<version>*`
 (Needs a separate registered account).
 
 [numpy styleguide]: https://numpydoc.readthedocs.io/en/latest/format.html

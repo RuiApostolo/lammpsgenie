@@ -1,6 +1,6 @@
 import pytest
 from conftest import zipRefs, ref_all_data_fs
-import lmptools.readfiles as rdfl
+import lammpsgenie.readfiles as rdfl
 
 
 class TestReadAll:

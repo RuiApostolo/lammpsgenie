@@ -1,6 +1,6 @@
 import pytest
-import lmptools.commondata as cdt
-import lmptools.atoms as atoms
+import lammpsgenie.commondata as cdt
+import lammpsgenie.atoms as atoms
 
 
 def test_getDumpTSRange_fromDummy(dummy_dump):

@@ -1,4 +1,5 @@
 #!/bin/env python3
+<<<<<<< HEAD:lmptools/mergedatafiles.py
 """
 Functions and script required to merge LAMMPS data diles.
 """
@@ -6,11 +7,16 @@ Functions and script required to merge LAMMPS data diles.
 import lmptools.atoms as atoms
 from lmptools._version import __version__
 from lmptools._name import _name
+import lammpsgenie.atoms as atoms
+from lammpsgenie._version import __version__
+from lammpsgenie._name import _name
+>>>>>>> master:lammpsgenie/mergedatafiles.py
 from yaml import full_load
 from sys import argv
 from copy import deepcopy
 from datetime import datetime
 from os.path import basename
+from warnings import warn
 import operator
 
 
@@ -350,7 +356,7 @@ def mergeTopologies(topologies, newboxsize):
         New simulation box size, intended to be read from settings file.
         The dictionary takes the form:
         coordinate (str) : float
-        where coordinate is can take the values:
+        where `coordinate` can have the values:
         'xlo', 'xhi', 'ylo', 'yhi', 'zlo', 'zhi'
         in accordance with LAMMPS data file syntax.
 
@@ -440,6 +446,18 @@ def mergeTopologies(topologies, newboxsize):
         molid += 1
     # limits/boxsize
     merged_topology['boxsize'] = newboxsize
+    # check if atoms go over newboxsize
+    lim_match = {min: 'lo', max: 'hi'}
+    merged_limits = limitsTopology(merged_topology)
+    for limit in merged_limits:
+        for coord in merged_limits[limit]:
+            under_test = merged_limits[limit][coord]
+            if (limit(under_test,
+                      newboxsize[coord+lim_match[limit]]) == under_test) and (
+                      # when both are the same
+                      under_test != newboxsize[coord+lim_match[limit]]):
+                warn("Atoms have coordinates outside new box. \
+                       Increase boxsize.", UserWarning)
     # cleanup
     del merged_topology['topologycounts'][None]
     return merged_topology

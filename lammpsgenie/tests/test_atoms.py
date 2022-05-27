@@ -1,7 +1,7 @@
 import pytest
 from conftest import zipRefs, ref_data_files, ref_data_files_large
-import lmptools.atoms as atoms
-import lmptools.commondata as cdt
+import lammpsgenie.atoms as atoms
+import lammpsgenie.commondata as cdt
 
 
 @pytest.mark.parametrize("dumpfile, natoms", [
