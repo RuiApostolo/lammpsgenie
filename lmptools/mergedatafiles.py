@@ -1,4 +1,8 @@
 #!/bin/env python3
+"""
+Functions and script required to merge LAMMPS data diles.
+"""
+
 import lmptools.atoms as atoms
 from lmptools._version import __version__
 from lmptools._name import _name
@@ -9,10 +13,6 @@ from datetime import datetime
 from os.path import basename
 import operator
 
-
-"""
-Functions and script required to merge LAMMPS data diles.
-"""
 
 __all__ = [
     'readInputFile',
@@ -129,7 +129,7 @@ def readTopology(file):
 
 def readTopologies(settings):
     """
-    Reads Topology from settings dict.
+    Reads Topologies from settings dict.
 
     Parameters
     ----------

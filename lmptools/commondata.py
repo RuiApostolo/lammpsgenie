@@ -46,8 +46,10 @@ def readTS(lines, tsnum, atomnames, header=9):
     Parameters
     ----------
     lines : list of str
+        ## should this just say 'List of lines from dumpfile.'?
         Reads list of lines from dumpfile.
 
+    ## is this indexed from 0 or 1?
     tsnum : int
         Number of the frame to read.
 
@@ -105,6 +107,7 @@ def readTS(lines, tsnum, atomnames, header=9):
 
 def getTrajTSRange(traj, ts1, ts2):
     """
+    ## inclusive?
     Select a partial timestep range from a trajectory.
 
     Parameters

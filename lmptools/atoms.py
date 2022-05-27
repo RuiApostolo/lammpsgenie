@@ -1,10 +1,10 @@
+"""
+Function that gets atomic information from already loaded data and dump files.
+"""
+
 import lmptools.readfiles as rdfl
 from re import compile, match
 from collections import defaultdict
-
-"""
-Function that get atomic information from already loaded data and dump files.
-"""
 
 
 __all__ = [
@@ -46,9 +46,9 @@ def getNatoms(lines):
     Fails hard if lines don't contain the target string.
     """
 
-    for i, x in enumerate(lines):
-        if lines[i].startswith("ITEM: NUMBER OF ATOMS"):
-            natoms = int(lines[i+1])
+    for lineindex, _ in enumerate(lines):
+        if lines[lineindex].startswith("ITEM: NUMBER OF ATOMS"):
+            natoms = int(lines[lineindex+1])
             return natoms
     return None
 
@@ -129,7 +129,6 @@ def getAtomData(filename):
 
         elif "atom types" in line:
             natomtypes = _getFirst(line, "atom types")
-            #  print("ntypes ", natomtypes)
 
         elif "Masses" in line:
             masses = _getMasses(lines, line_idx, natomtypes, atomnames)
@@ -153,6 +152,7 @@ def getAtomData(filename):
         'dihedraldata': {},
         'improperdata': {},
             }
+
 
 
 def getAllAtomData(filename):  # noqa C901
@@ -370,6 +370,7 @@ def getAtomsByType(atomdata, atomnames, *types):
         A dictionary with the LAMMPS atom type numbers as keys, and the
         custom atom type names as values. From getAtomType().
 
+    ## Does this mean '1', '2' etc.?
     *types: str
         Atom types in string form.
 
@@ -420,7 +421,7 @@ def getTotalMass(traj, masses):
 
 def getCOM(traj, tsrange, atomlist, masses):
     """
-    Returns centre of mass position for atom range in timestep range.
+    Returns centre of mass position for chosen atoms in timestep range.
 
     Parameters
     ----------
@@ -459,19 +460,19 @@ def getCOM(traj, tsrange, atomlist, masses):
 ###############################################################################
 def _getFirst(line, word):
     """
-    Returns split part before 'word'
+    Returns an integer in 'line' before a specified delimiter 'word'.
 
     Parameters
     ----------
     line : str
-        Line to be split
+        Line to be split.
     word : str
-        Word to split line on
+        Delimiter used to split 'line'.
 
     Returns
     -------
     int
-        Returns integer before word.
+        Returns integer before 'word'.
     """
 
     return int(line.split(word)[0])
@@ -502,6 +503,7 @@ def _getMasses(lines, line_idx, natomtypes, atomnames):
 
     masses = {}
     for atomtype in range(int(natomtypes)):
+        # what does 'el' stand for?
         el = lines[line_idx + 2 + atomtype].split()
         #  print(el)
         # assign masses by atom type
