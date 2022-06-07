@@ -154,7 +154,6 @@ def getAtomData(filename):
             }
 
 
-
 def getAllAtomData(filename):  # noqa C901
     """
     Retrieves every piece of atom data from a LAMMPS data file.
@@ -370,9 +369,8 @@ def getAtomsByType(atomdata, atomnames, *types):
         A dictionary with the LAMMPS atom type numbers as keys, and the
         custom atom type names as values. From getAtomType().
 
-    ## Does this mean '1', '2' ,or C, H, etc. ?
-    *types: str
-        Atom types in string form.
+    types : str
+        Atom types in string form, like 'C', 'H', or 'SCP'.
 
     Returns
     -------
@@ -385,6 +383,7 @@ def getAtomsByType(atomdata, atomnames, *types):
     sortedatomnum = sorted(atomdata.keys())
     for atom in sortedatomnum:
         for typ in types:
+
             if atomdata[atom]['type'] in [a for a in atomnames[typ]]:
                 atomrange.append(atom)
     return atomrange
@@ -503,11 +502,9 @@ def _getMasses(lines, line_idx, natomtypes, atomnames):
 
     masses = {}
     for atomtype in range(int(natomtypes)):
-        ## what does 'el' stand for?
-        el = lines[line_idx + 2 + atomtype].split()
-        #  print(el)
+        word = lines[line_idx + 2 + atomtype].split()
         # assign masses by atom type
-        masses[atomnames[int(el[0])]] = float(el[1])
+        masses[atomnames[int(word[0])]] = float(word[1])
     return masses
 
 
