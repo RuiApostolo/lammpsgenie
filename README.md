@@ -101,7 +101,7 @@ And restart your shell (or source `~/.profile`).
 To create a new venv, use:
 
 ```
-mkvirtuaenv <name>
+mkvirtualenv <name>
 ```
 
 This will create the venv and activate it.
@@ -157,9 +157,8 @@ ptw --runner "pytest --testmon"
 ```
 
 To check that the test cover the entirety of your code, use the coverage plugin for pytest:
-
 ```
-pytest --cov=lammpsgenie/
+pytest --cov=lammpsgenie
 ```
 
 There are several settings that can be changed for this tool, to do so, add a `.coveragerc` file to the project directory.

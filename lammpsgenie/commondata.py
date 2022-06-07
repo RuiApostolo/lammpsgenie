@@ -46,10 +46,10 @@ def readTS(lines, tsnum, atomnames, header=9):
     Parameters
     ----------
     lines : list of str
-        Reads list of lines from dumpfile.
+        List of lines from dumpfile.
 
     tsnum : int
-        Number of the frame to read.
+        Number of the frame to read (1-indexed).
 
     atomnames : dict
         Dictionary of atom types and names. Use atoms.getAtomType().
@@ -105,7 +105,7 @@ def readTS(lines, tsnum, atomnames, header=9):
 
 def getTrajTSRange(traj, ts1, ts2):
     """
-    Select a partial timestep range from a trajectory.
+    Select a partial timestep range from a trajectory (inclusive interval).
 
     Parameters
     ----------
